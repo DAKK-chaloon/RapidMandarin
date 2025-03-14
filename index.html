@@ -1,0 +1,3482 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RapidMandarin - Apprentissage du chinois avec HanziBase</title>
+    <!-- Bibliothèques corrigées -->
+    <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5.0/dist/hanzi-writer.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/confetti-js@0.0.18/dist/index.min.js"></script>
+    <style>
+        /* Même style qu'avant */
+        :root {
+            --primary: #e63946;
+            --secondary: #457b9d;
+            --light: #f1faee;
+            --dark: #1d3557;
+            --accent: #a8dadc;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--light);
+            color: var(--dark);
+            line-height: 1.6;
+        }
+
+        header {
+            background-color: var(--dark);
+            color: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: white;
+            text-decoration: none;
+        }
+
+        .logo span {
+            color: var(--primary);
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+
+        .nav-links a.active {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .nav-links a:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            color: white;
+            margin-right: 1rem;
+        }
+
+        .user-level {
+            background-color: var(--primary);
+            color: white;
+            padding: 0.2rem 0.5rem;
+            border-radius: 50%;
+            font-size: 0.9rem;
+            margin-right: 0.5rem;
+        }
+
+        .user-xp {
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 0.2rem 0.5rem;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            position: relative;
+            width: 100px;
+            text-align: center;
+        }
+
+        .user-xp-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            z-index: 0;
+        }
+
+        .user-xp-text {
+            position: relative;
+            z-index: 1;
+        }
+
+        .streak-container {
+            display: flex;
+            align-items: center;
+            margin-left: 1rem;
+            color: #FFD700;
+            font-size: 0.9rem;
+        }
+
+        .streak-flame {
+            margin-right: 0.3rem;
+        }
+
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.5rem 1.5rem;
+            border-radius: 4px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .btn:hover {
+            background-color: #c1272d;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background-color: var(--secondary);
+        }
+
+        .btn-secondary:hover {
+            background-color: #36647e;
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-outline:hover {
+            background-color: rgba(230, 57, 70, 0.1);
+        }
+
+        .btn-sm {
+            padding: 0.3rem 0.8rem;
+            font-size: 0.9rem;
+        }
+
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .section {
+            margin-bottom: 3rem;
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        h1,
+        h2,
+        h3 {
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: var(--dark);
+        }
+
+        h2 {
+            font-size: 2rem;
+            color: var(--secondary);
+            border-bottom: 3px solid var(--accent);
+            padding-bottom: 0.5rem;
+            margin-top: 2rem;
+        }
+
+        h3 {
+            font-size: 1.5rem;
+            color: var(--dark);
+        }
+
+        p {
+            margin-bottom: 1rem;
+        }
+
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .character-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .character {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            color: var(--dark);
+        }
+
+        .pronunciation {
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+            color: var(--secondary);
+        }
+
+        .meaning {
+            font-size: 1rem;
+            color: var(--dark);
+            margin-bottom: 1rem;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .stat-box {
+            background-color: white;
+            padding: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            flex: 1;
+            margin: 0.5rem;
+            min-width: 150px;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .badges-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin: 2rem 0;
+            justify-content: center;
+        }
+
+        .badge {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1rem;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            width: 120px;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .badge-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .badge-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 0.3rem;
+        }
+
+        .badge-desc {
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        .badge-locked {
+            filter: grayscale(1);
+            opacity: 0.7;
+        }
+
+        .daily-challenge {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            border-left: 5px solid var(--primary);
+        }
+
+        .daily-challenge-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .daily-challenge-progress {
+            display: flex;
+            align-items: center;
+            margin-top: 1rem;
+        }
+
+        .progress-bar {
+            flex-grow: 1;
+            height: 8px;
+            background-color: #e0e0e0;
+            border-radius: 4px;
+            margin: 0 1rem;
+            position: relative;
+        }
+
+        .progress-value {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            background-color: var(--primary);
+            border-radius: 4px;
+        }
+
+        .leaderboard {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .leaderboard-item {
+            display: flex;
+            align-items: center;
+            padding: 0.8rem 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .leaderboard-rank {
+            font-weight: 700;
+            width: 40px;
+            text-align: center;
+        }
+
+        .leaderboard-user {
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+        }
+
+        .leaderboard-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background-color: #ddd;
+            margin-right: 0.8rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: 700;
+            color: #666;
+        }
+
+        .leaderboard-points {
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .quiz-container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .quiz-question {
+            font-size: 2.5rem;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .quiz-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .quiz-option {
+            background-color: var(--light);
+            border: 2px solid var(--accent);
+            border-radius: 4px;
+            padding: 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .quiz-option:hover {
+            background-color: var(--accent);
+        }
+
+        .quiz-option.correct {
+            background-color: #a3e4a3;
+            border-color: #4caf50;
+        }
+
+        .quiz-option.incorrect {
+            background-color: #f8d7da;
+            border-color: #dc3545;
+        }
+
+        .search-container {
+            display: flex;
+            margin-bottom: 2rem;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 0.8rem;
+            border: 2px solid #ddd;
+            border-radius: 4px 0 0 4px;
+            font-size: 1rem;
+        }
+
+        .search-button {
+            background-color: var(--secondary);
+            color: white;
+            border: none;
+            border-radius: 0 4px 4px 0;
+            padding: 0 1.5rem;
+            cursor: pointer;
+        }
+
+        .writing-pad {
+            width: 300px;
+            height: 300px;
+            border: 1px solid #ddd;
+            background-color: white;
+            border-radius: 4px;
+            margin: 1rem auto;
+        }
+
+        .writing-pad canvas {
+            width: 100%;
+            height: 100%;
+            cursor: crosshair;
+        }
+
+        .writing-controls {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .stroke-display {
+            width: 300px;
+            height: 200px;
+            border: 1px solid #ddd;
+            background-color: white;
+            margin: 1rem auto;
+        }
+
+        .achievement-popup {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: white;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            max-width: 300px;
+            z-index: 1000;
+            animation: slideIn 0.5s ease, fadeOut 0.5s ease 4.5s forwards;
+        }
+
+        .achievement-icon {
+            font-size: 2rem;
+            margin-right: 1rem;
+            color: gold;
+        }
+
+        .achievement-content h4 {
+            margin: 0 0 0.3rem 0;
+            color: var(--dark);
+        }
+
+        .achievement-content p {
+            margin: 0;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(120%);
+            }
+
+            to {
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+            }
+
+            to {
+                opacity: 0;
+            }
+        }
+
+        .character-detail {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+
+        .character-info {
+            flex: 1;
+            min-width: 300px;
+            padding: 1rem;
+        }
+
+        .character-writer {
+            flex: 1;
+            min-width: 300px;
+            padding: 1rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .character-example {
+            margin-top: 1rem;
+        }
+
+        .character-example-item {
+            margin-bottom: 0.5rem;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            padding: 2rem;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .modal-close {
+            font-size: 1.5rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+
+        .tab-navigation {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 1.5rem;
+        }
+
+        .tab-button {
+            padding: 0.8rem 1.5rem;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        .tab-button.active {
+            border-bottom: 3px solid var(--primary);
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 2rem auto;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading-container {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        footer {
+            background-color: var(--dark);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            margin-top: 3rem;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin: 1rem 0;
+            flex-wrap: wrap;
+        }
+
+        .footer-links a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        @media (max-width: 768px) {
+            nav {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .nav-links {
+                flex-direction: column;
+                gap: 0.5rem;
+                text-align: center;
+                width: 100%;
+            }
+
+            .quiz-options {
+                grid-template-columns: 1fr;
+            }
+
+            .user-profile {
+                margin: 1rem 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <nav>
+            <a href="#" class="logo">Rapid<span>Mandarin</span></a>
+            <ul class="nav-links">
+                <li><a href="#home" class="nav-link active" data-section="home">Accueil</a></li>
+                <li><a href="#learn" class="nav-link" data-section="learn">Apprendre</a></li>
+                <li><a href="#practice" class="nav-link" data-section="practice">Pratiquer</a></li>
+                <li><a href="#dictionary" class="nav-link" data-section="dictionary">Dictionnaire</a></li>
+                <li><a href="#challenges" class="nav-link" data-section="challenges">Défis</a></li>
+                <li><a href="#achievements" class="nav-link" data-section="achievements">Réussites</a></li>
+            </ul>
+            <div class="user-profile">
+                <div class="user-level" id="user-level">1</div>
+                <div class="user-xp">
+                    <div class="user-xp-bar" id="user-xp-bar" style="width: 0%;"></div>
+                    <span class="user-xp-text" id="user-xp-text">0/100 XP</span>
+                </div>
+                <div class="streak-container">
+                    <span class="streak-flame">🔥</span>
+                    <span id="user-streak">0</span>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <div class="main-content">
+        <!-- Home Section -->
+        <section id="home" class="section active">
+            <h1>Apprenez le chinois rapidement et efficacement</h1>
+            <p>RapidMandarin vous offre une méthode structurée et gamifiée pour maîtriser le chinois. Commencez par les
+                caractères essentiels et progressez à votre rythme tout en débloquant des récompenses.</p>
+
+            <div class="stats" id="stats-container">
+                <!-- Stats will be dynamically added here -->
+            </div>
+
+            <div class="card-grid">
+                <div class="card">
+                    <h3>Méthode d'apprentissage</h3>
+                    <p>Notre approche combine l'apprentissage des caractères, la prononciation, et des quiz interactifs
+                        pour maximiser votre rétention.</p>
+                    <button class="btn" onclick="navigateTo('learn')">Commencer à apprendre</button>
+                </div>
+                <div class="card">
+                    <h3>Pratique de l'écriture</h3>
+                    <p>Maîtrisez l'écriture des caractères chinois avec nos outils de pratique et de reconnaissance
+                        d'écriture.</p>
+                    <button class="btn btn-secondary" onclick="navigateTo('practice')">Pratiquer l'écriture</button>
+                </div>
+                <div class="card">
+                    <h3>Défis quotidiens</h3>
+                    <p>Restez motivé avec des défis quotidiens qui vous aident à maintenir une routine d'apprentissage.
+                    </p>
+                    <button class="btn btn-outline" onclick="navigateTo('challenges')">Voir les défis</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Learn Section -->
+        <section id="learn" class="section">
+            <h2>Apprendre les caractères</h2>
+            <p>Commencez votre voyage en apprenant les caractères chinois les plus courants. Pratiquez la prononciation
+                et la signification.</p>
+
+            <div style="margin-bottom: 1.5rem;">
+                <select id="hsk-level-selector" class="search-input" style="width: auto; margin-right: 1rem;">
+                    <option value="HSK1">HSK Niveau 1 (Débutant)</option>
+                    <option value="HSK2">HSK Niveau 2 (Élémentaire)</option>
+                    <option value="HSK3">HSK Niveau 3 (Intermédiaire)</option>
+                    <option value="ALL">Tous les niveaux</option>
+                </select>
+                <button class="btn" id="mark-as-learned-btn">Marquer comme appris</button>
+            </div>
+
+            <div id="character-detail" class="card" style="display: none;">
+                <!-- Character detail will be shown here -->
+            </div>
+
+            <div id="characters-grid" class="card-grid">
+                <!-- Characters will be dynamically added here -->
+                <div class="loading-container">
+                    <div class="loading-spinner"></div>
+                    <p>Chargement des caractères...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Practice Section -->
+        <section id="practice" class="section">
+            <h2>Testez vos connaissances</h2>
+            <p>Vérifiez votre compréhension des caractères chinois avec ces exercices interactifs.</p>
+
+            <div class="tab-navigation">
+                <button class="tab-button active" data-tab="quiz">Quiz</button>
+                <button class="tab-button" data-tab="writing">Écriture</button>
+                <button class="tab-button" data-tab="stroke-order">Ordre des traits</button>
+            </div>
+
+            <div id="quiz-tab" class="tab-content active">
+                <div style="margin-bottom: 1rem;">
+                    <select id="quiz-level-selector" class="search-input" style="width: auto; margin-right: 1rem;">
+                        <option value="HSK1">HSK Niveau 1 (Débutant)</option>
+                        <option value="HSK2">HSK Niveau 2 (Élémentaire)</option>
+                        <option value="HSK3">HSK Niveau 3 (Intermédiaire)</option>
+                        <option value="ALL">Tous les niveaux</option>
+                    </select>
+                    <button class="btn" id="start-quiz-btn">Commencer un nouveau quiz</button>
+                </div>
+
+                <div id="quiz-container" class="quiz-container" style="display: none;">
+                    <!-- Quiz content will be dynamically added here -->
+                </div>
+            </div>
+
+            <div id="writing-tab" class="tab-content">
+                <h3>Reconnaissance d'écriture</h3>
+                <p>Dessinez un caractère chinois ci-dessous pour le faire reconnaître.</p>
+
+                <div class="writing-pad">
+                    <canvas id="writing-canvas" width="600" height="600"></canvas>
+                </div>
+
+                <div class="writing-controls">
+                    <button class="btn" id="clear-canvas-btn">Effacer</button>
+                </div>
+
+                <div id="recognition-results" style="display: none;">
+                    <h4>Caractères reconnus:</h4>
+                    <div id="results-container" class="card-grid"
+                        style="grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));">
+                        <!-- Recognition results will be added here -->
+                    </div>
+                </div>
+            </div>
+
+            <div id="stroke-order-tab" class="tab-content">
+                <h3>Ordre des traits</h3>
+                <p>Apprenez l'ordre des traits pour bien écrire les caractères chinois.</p>
+
+                <div style="margin-bottom: 1rem;">
+                    <select id="stroke-character-selector" class="search-input" style="width: auto;">
+                        <!-- Characters will be dynamically added here -->
+                    </select>
+                    <button class="btn" id="animate-stroke-btn">Animer</button>
+                </div>
+
+                <div id="stroke-display-container" style="text-align: center;">
+                    <div id="stroke-display"
+                        style="width: 300px; height: 300px; margin: 0 auto; border: 1px solid #ddd;"></div>
+                </div>
+
+                <div class="card" style="margin-top: 1.5rem;">
+                    <h4>Traits de base</h4>
+                    <div id="basic-strokes-container"
+                        style="display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 1rem;">
+                        <!-- Basic strokes will be added here -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Dictionary Section -->
+        <section id="dictionary" class="section">
+            <h2>Dictionnaire</h2>
+            <p>Vous pouvez rechercher par caractère chinois, pinyin ou mot français.</p>
+
+            <div class="search-container">
+                <input type="text" id="dictionary-search" class="search-input"
+                    placeholder="Rechercher un caractère ou un mot...">
+                <button class="search-button" id="dictionary-search-btn">Rechercher</button>
+            </div>
+
+            <div id="search-results" style="display: none;">
+                <h3>Résultats de recherche</h3>
+                <div id="dictionary-results" class="card-grid">
+                    <!-- Search results will be added here -->
+                </div>
+            </div>
+
+            <div class="card" style="margin-top: 2rem;">
+                <h3>Radicaux chinois</h3>
+                <p>Les radicaux sont les composants de base des caractères chinois. Ils peuvent vous aider à comprendre
+                    la structure et le sens des caractères.</p>
+
+                <div id="radicals-container" class="card-grid">
+                    <!-- Radicals will be added here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Challenges Section -->
+        <section id="challenges" class="section">
+            <h2>Défis quotidiens</h2>
+            <p>Complétez ces défis pour gagner des points d'expérience et des récompenses.</p>
+
+            <div id="daily-challenges-container">
+                <!-- Daily challenges will be added here -->
+            </div>
+
+            <div class="leaderboard">
+                <h3>Classement</h3>
+                <div id="leaderboard-container">
+                    <!-- Leaderboard entries will be added here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Achievements Section -->
+        <section id="achievements" class="section">
+            <h2>Réussites et Badges</h2>
+            <p>Débloquez des badges en progressant dans votre apprentissage du chinois.</p>
+
+            <div id="badges-container" class="badges-container">
+                <!-- Badges will be added here -->
+            </div>
+
+            <div class="card">
+                <h3>Statistiques personnelles</h3>
+                <div id="achievement-stats" class="stats">
+                    <!-- Stats will be added here -->
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Historique des réussites</h3>
+                <div id="achievements-history">
+                    <!-- Achievement history will be added here -->
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <div id="character-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Détails du caractère</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div id="modal-body">
+                <!-- Character details will be added here -->
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>© 2025 RapidMandarin - Propulsé par HanziBase - Apprentissage rapide et efficace du chinois</p>
+        <div class="footer-links">
+            <a href="#">À propos</a>
+            <a href="#">Contact</a>
+            <a href="#">Conditions d'utilisation</a>
+            <a href="#">Politique de confidentialité</a>
+        </div>
+    </footer>
+
+    <script>
+        // ===================================
+        // API SERVICES - HANZIBASE INTEGRATION
+        // ===================================
+
+        // API Client pour les données chinoises avec HanziBase
+        const ChineseAPI = {
+            // Configuration de l'API
+            config: {
+                // API principale - HanziBase API
+                apiBaseUrl: 'https://api.hanzibase.net',
+                // API de reconnaissance d'écriture manuscrite (simulée)
+                handwritingApiUrl: 'https://api.handwritingchinese.com/recognize',
+                // Clé API (normalement stockée de manière sécurisée)
+                apiKey: 'demo-key-12345'
+            },
+
+            // Méthode pour obtenir des caractères par niveau HSK
+            async getCharactersByLevel(level, offset = 0, limit = 100) {
+                try {
+                    // Vérifier si les données sont déjà chargées
+                    if (!this.hanziData || this.hanziData.length === 0) {
+                        console.log("Chargement du fichier JSON...");
+                        const response = await fetch("./rapidmandarin.hanzis.json"); // Assurez-vous que le chemin est correct
+
+                        if (!response.ok) {
+                            throw new Error(`Impossible de charger le fichier JSON (code ${response.status})`);
+                        }
+
+                        this.hanziData = await response.json();
+                    }
+
+                    console.log(`Fetching characters for level ${level}, offset ${offset}, limit ${limit}`);
+
+                    // Filtrer par niveau HSK si spécifié
+                    let characters = this.hanziData;
+                    if (level !== "ALL") {
+                        const hskLevel = parseInt(level.replace("HSK", ""));
+                        characters = characters.filter(char => {
+                            const charHSK = this.getHSKLevelFromFreq(char.freq || 5); // Assurez-vous que char.freq existe
+                            return charHSK === hskLevel;
+                        });
+                    }
+
+                    // Limiter les résultats en fonction de l'offset et de la limite
+                    const paginatedCharacters = characters.slice(offset, offset + limit);
+
+                    return {
+                        success: true,
+                        data: paginatedCharacters,
+                        total: characters.length, // Retourne le total des caractères filtrés, pas seulement la pagination
+                        message: "Characters fetched successfully from local JSON"
+                    };
+                } catch (error) {
+                    console.error("Error fetching characters:", error);
+                    return {
+                        success: false,
+                        data: [],
+                        message: `Erreur: ${error.message}. Impossible de charger les caractères.`
+                    };
+                }
+            },
+
+            // Mapper l'objet caractère API vers notre format interne
+            mapApiCharacterToInternal(apiChar) {
+                // Vérifier si l'objet existe et a les propriétés nécessaires
+                if (!apiChar) {
+                    console.warn("Invalid character object received from API");
+                    return {
+                        id: Math.floor(Math.random() * 10000),  // ID fictif pour éviter les erreurs
+                        character: "?",
+                        traditional: "?",
+                        pinyin: "?",
+                        meaning: "Caractère inconnu",
+                        level: "HSK1",
+                        examples: ["Exemple non disponible"],
+                        strokes: 0,
+                        radical: "?",
+                        freq: 5
+                    };
+                }
+
+                // Extraire les propriétés avec sécurité (en utilisant l'opérateur ?. pour éviter les erreurs)
+                const char = apiChar.char || apiChar.simp_char || "?";
+                const trad = apiChar.trad_char || char;
+                const id = apiChar.id || Math.floor(Math.random() * 10000);
+                const pinyin = apiChar.pinyin || "?";
+                const meaning = apiChar.translations || apiChar.meaning || "?";
+                const strokes = apiChar.stroke_count || apiChar.strokes || 0;
+                const radical = apiChar.radical || apiChar.simp_radical || "?";
+                const freq = apiChar.freq || 5;
+
+                // Générer le niveau HSK à partir de la fréquence
+                const level = `HSK${this.getHSKLevelFromFreq(freq)}`;
+
+                // Générer des exemples
+                const examples = this.generateExamples(char, meaning);
+
+                return {
+                    id,
+                    character: char,
+                    traditional: trad,
+                    pinyin,
+                    meaning,
+                    level,
+                    examples,
+                    strokes,
+                    radical,
+                    freq
+                };
+            },
+
+            // Générer des exemples fictifs basés sur le caractère
+            generateExamples(character, meaning) {
+                const meaningParts = meaning.split(';');
+                const mainMeaning = meaningParts[0].trim().split(',')[0].trim();
+
+                // Exemples génériques basés sur le sens principal
+                return [
+                    `${character}好 (${mainMeaning} bien)`,
+                    `我的${character} (mon/ma ${mainMeaning})`
+                ];
+            },
+
+            // Mapper la fréquence au niveau HSK
+            getHSKLevelFromFreq(freq) {
+                if (freq <= 2) return 1;
+                if (freq <= 4) return 2;
+                return 3;
+            },
+
+            // Méthode pour rechercher un caractère
+            async searchCharacter(query) {
+                try {
+                    if (!query) return { success: true, data: [], message: "Query is empty" };
+
+                    console.log(`Searching for: ${query}`);
+
+                    // Faire l'appel API
+                    const response = await fetch(`${this.config.apiBaseUrl}/character/search/${encodeURIComponent(query)}/id/idc/idc/idc/no?page=0`);
+
+                    if (!response.ok) {
+                        throw new Error(`API responded with status ${response.status}`);
+                    }
+
+                    const responseData = await response.json();
+
+                    // Extraire le tableau de caractères de la réponse
+                    let characters = [];
+
+                    if (responseData && responseData.characters && Array.isArray(responseData.characters)) {
+                        // Format attendu: { characters: [...] }
+                        characters = responseData.characters;
+                    } else if (Array.isArray(responseData)) {
+                        // Format alternatif: directement un tableau
+                        characters = responseData;
+                    } else if (responseData && typeof responseData === 'object') {
+                        // Autre format: objet avec propriétés qui pourraient être des caractères
+                        // Essayer d'extraire les caractères potentiels
+                        for (const key in responseData) {
+                            if (responseData[key] && typeof responseData[key] === 'object' && responseData[key].char) {
+                                characters.push(responseData[key]);
+                            }
+                        }
+                    }
+
+                    // Si aucun caractère n'a été trouvé dans la réponse
+                    if (characters.length === 0) {
+                        console.warn("No characters found in API response, using fallback search");
+                        return {
+                            success: false,
+                            data: HanziDB.searchCharacter(query),
+                            message: "Aucun résultat trouvé dans l'API. Utilisation des données locales."
+                        };
+                    }
+
+                    // Traiter les résultats de recherche
+                    const results = characters.map(char => this.mapApiCharacterToInternal(char));
+
+                    return {
+                        success: true,
+                        data: results,
+                        message: "Search completed successfully"
+                    };
+                } catch (error) {
+                    console.error("Error searching characters:", error);
+                    return {
+                        success: false,
+                        data: HanziDB.searchCharacter(query),
+                        message: `Erreur: ${error.message}. Utilisation des données locales.`
+                    };
+                }
+            },
+
+            // Méthode pour reconnaître l'écriture manuscrite
+            async recognizeHandwriting(imageData) {
+                try {
+                    console.log("Recognizing handwriting...");
+
+                    // Simuler un délai réseau
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+
+                    // Simuler des résultats de reconnaissance
+                    // Utiliser le premier caractère du niveau HSK1
+                    const hsk1Chars = await this.getCharactersByLevel("HSK1");
+                    const randomChars = [];
+
+                    // Sélectionner 5 caractères aléatoires
+                    if (hsk1Chars.success && hsk1Chars.data.length > 0) {
+                        for (let i = 0; i < 5; i++) {
+                            const randomIndex = Math.floor(Math.random() * hsk1Chars.data.length);
+                            randomChars.push(hsk1Chars.data[randomIndex]);
+                        }
+                    } else {
+                        // Fallback: utiliser des données locales
+                        const localChars = HanziDB.getCharactersByLevel("HSK1");
+                        for (let i = 0; i < 5; i++) {
+                            const randomIndex = Math.floor(Math.random() * localChars.length);
+                            randomChars.push(localChars[randomIndex]);
+                        }
+                    }
+
+                    // Générer des scores de confiance
+                    const results = randomChars.map(char => ({
+                        character: char.character,
+                        score: Math.random() * 0.5 + 0.5, // Score entre 0.5 et 1.0
+                        details: {
+                            pinyin: char.pinyin,
+                            meaning: char.meaning
+                        }
+                    })).sort((a, b) => b.score - a.score);
+
+                    return {
+                        success: true,
+                        data: results,
+                        message: "Handwriting recognition completed"
+                    };
+                } catch (error) {
+                    console.error("Error recognizing handwriting:", error);
+                    return {
+                        success: false,
+                        data: [],
+                        message: `Erreur: ${error.message}`
+                    };
+                }
+            },
+
+            // Méthode pour obtenir les détails d'un caractère
+            async getCharacterDetails(character) {
+                try {
+                    console.log(`Getting details for character: ${character}`);
+
+                    // Rechercher le caractère
+                    const searchResponse = await this.searchCharacter(character);
+
+                    if (!searchResponse.success || searchResponse.data.length === 0) {
+                        throw new Error(`Character "${character}" not found`);
+                    }
+
+                    // Obtenir le premier caractère correspondant
+                    const char = searchResponse.data.find(c => c.character === character) || searchResponse.data[0];
+
+                    // Ajouter des données supplémentaires (puisque l'API ne fournit pas certains détails)
+                    const details = {
+                        ...char,
+                        etymology: "Information étymologique sur l'origine du caractère",
+                        components: [
+                            { component: char.radical, meaning: "radical principal" }
+                        ],
+                        commonWords: [
+                            { word: `${character}好`, pinyin: "nǐhǎo", meaning: "bonjour" },
+                            { word: `${character}们`, pinyin: "nǐmen", meaning: "vous (pluriel)" }
+                        ]
+                    };
+
+                    return {
+                        success: true,
+                        data: details,
+                        message: "Character details retrieved successfully"
+                    };
+                } catch (error) {
+                    console.error("Error getting character details:", error);
+                    return {
+                        success: false,
+                        data: null,
+                        message: `Erreur: ${error.message}`
+                    };
+                }
+            },
+
+            // Méthode pour obtenir l'ordre des traits d'un caractère
+            async getStrokeOrderData(character) {
+                try {
+                    console.log(`Getting stroke order for character: ${character}`);
+
+                    // Simuler un délai réseau
+                    await new Promise(resolve => setTimeout(resolve, 400));
+
+                    // Rechercher dans l'API pour obtenir le nombre de traits
+                    const charInfo = await this.searchCharacter(character);
+                    let strokeCount = 5; // Valeur par défaut
+
+                    if (charInfo.success && charInfo.data.length > 0) {
+                        const char = charInfo.data.find(c => c.character === character) || charInfo.data[0];
+                        strokeCount = char.strokes || 5;
+                    }
+
+                    // Données fictives
+                    const strokeData = {
+                        character: character,
+                        strokeCount: strokeCount,
+                        medians: [], // Données de tracé pour une animation SVG
+                        strokes: [] // Informations sur chaque trait
+                    };
+
+                    return {
+                        success: true,
+                        data: strokeData,
+                        message: "Stroke order data retrieved successfully"
+                    };
+                } catch (error) {
+                    console.error("Error getting stroke order data:", error);
+                    return {
+                        success: false,
+                        data: null,
+                        message: `Erreur: ${error.message}`
+                    };
+                }
+            }
+        };
+
+        // Base de données locale des caractères chinois (pour fallback)
+        const HanziDB = {
+            // Base de données des caractères
+            database: [
+                // HSK Niveau 1 (caractères fondamentaux)
+                { id: 525, character: "家", traditional: "家", pinyin: "jiā", meaning: "house, home, residence; family", level: "HSK1", examples: ["我家很大。 (Ma maison est grande.)", "回家 (rentrer à la maison)"], strokes: 10, radical: "宀" },
+                { id: 1, character: "我", traditional: "我", pinyin: "wǒ", meaning: "je, moi", level: "HSK1", examples: ["我是法国人。 (Je suis français.)", "我喜欢学习汉语。 (J'aime apprendre le chinois.)"], strokes: 7, radical: "戈" },
+                { id: 2, character: "你", traditional: "你", pinyin: "nǐ", meaning: "tu, toi", level: "HSK1", examples: ["你好吗？ (Comment vas-tu ?)", "你是老师吗？ (Es-tu professeur ?)"], strokes: 7, radical: "亻" },
+                { id: 3, character: "他", traditional: "他", pinyin: "tā", meaning: "il, lui", level: "HSK1", examples: ["他是我的朋友。 (Il est mon ami.)", "他在北京工作。 (Il travaille à Pékin.)"], strokes: 5, radical: "亻" },
+                { id: 4, character: "她", traditional: "她", pinyin: "tā", meaning: "elle", level: "HSK1", examples: ["她很漂亮。 (Elle est jolie.)", "她会说中文。 (Elle sait parler chinois.)"], strokes: 6, radical: "女" },
+                { id: 5, character: "它", traditional: "它", pinyin: "tā", meaning: "il/elle (pour les objets)", level: "HSK1", examples: ["它是一本书。 (C'est un livre.)", "它很小。 (C'est petit.)"], strokes: 7, radical: "宀" },
+                { id: 6, character: "们", traditional: "們", pinyin: "men", meaning: "pluriel (personnes)", level: "HSK1", examples: ["我们是学生。 (Nous sommes étudiants.)", "他们来自法国。 (Ils viennent de France.)"], strokes: 4, radical: "亻" },
+                { id: 7, character: "是", traditional: "是", pinyin: "shì", meaning: "être", level: "HSK1", examples: ["我是老师。 (Je suis professeur.)", "这是什么？ (Qu'est-ce que c'est ?)"], strokes: 9, radical: "日" },
+                { id: 8, character: "不", traditional: "不", pinyin: "bù", meaning: "non, ne pas", level: "HSK1", examples: ["我不喜欢。 (Je n'aime pas.)", "他不在家。 (Il n'est pas à la maison.)"], strokes: 4, radical: "一" },
+                { id: 9, character: "这", traditional: "這", pinyin: "zhè", meaning: "ceci, ce", level: "HSK1", examples: ["这是我的书。 (C'est mon livre.)", "这个人是谁？ (Qui est cette personne ?)"], strokes: 7, radical: "辶" },
+                { id: 10, character: "那", traditional: "那", pinyin: "nà", meaning: "cela, ce", level: "HSK1", examples: ["那是什么？ (Qu'est-ce que c'est ?)", "那个人是我的朋友。 (Cette personne est mon ami.)"], strokes: 6, radical: "阝" },
+
+                // HSK Niveau 2 (plus avancé)
+                { id: 679, character: "室", traditional: "室", pinyin: "shì", meaning: "room, home, house, chamber", level: "HSK2", examples: ["教室 (salle de classe)", "卧室 (chambre à coucher)"], strokes: 9, radical: "宀" },
+                { id: 31, character: "前", traditional: "前", pinyin: "qián", meaning: "avant, devant", level: "HSK2", examples: ["前面 (devant)", "以前 (avant)"], strokes: 9, radical: "刂" },
+                { id: 32, character: "后", traditional: "後", pinyin: "hòu", meaning: "après, derrière", level: "HSK2", examples: ["后面 (derrière)", "以后 (après)"], strokes: 9, radical: "彐" },
+                { id: 33, character: "里", traditional: "裡", pinyin: "lǐ", meaning: "dans, à l'intérieur", level: "HSK2", examples: ["里面 (à l'intérieur)", "这里 (ici)"], strokes: 7, radical: "里" },
+                { id: 34, character: "外", traditional: "外", pinyin: "wài", meaning: "dehors, extérieur", level: "HSK2", examples: ["外面 (dehors)", "国外 (à l'étranger)"], strokes: 5, radical: "夕" },
+                { id: 35, character: "今", traditional: "今", pinyin: "jīn", meaning: "aujourd'hui, maintenant", level: "HSK2", examples: ["今天 (aujourd'hui)", "今年 (cette année)"], strokes: 4, radical: "人" },
+
+                // HSK Niveau 3 (avancé)
+                { id: 1425, character: "宅", traditional: "宅", pinyin: "zhái", meaning: "residence, dwelling, home; grave", level: "HSK3", examples: ["宅在家里 (rester à la maison)", "住宅 (habitation)"], strokes: 6, radical: "宀" },
+                { id: 51, character: "学", traditional: "學", pinyin: "xué", meaning: "étudier, apprendre", level: "HSK3", examples: ["学习 (étudier)", "大学 (université)"], strokes: 8, radical: "子" },
+                { id: 52, character: "习", traditional: "習", pinyin: "xí", meaning: "pratiquer", level: "HSK3", examples: ["学习 (étudier)", "习惯 (habitude)"], strokes: 3, radical: "纟" },
+                { id: 53, character: "做", traditional: "做", pinyin: "zuò", meaning: "faire", level: "HSK3", examples: ["做饭 (cuisiner)", "做作业 (faire ses devoirs)"], strokes: 11, radical: "亻" }
+            ],
+
+            // Obtenir des caractères par niveau HSK
+            getCharactersByLevel(level, offset = 0, limit = 100) {
+                const filteredChars = this.database.filter(char => level === "ALL" || char.level === level);
+                return filteredChars.slice(offset, offset + limit);
+            },
+
+            // Rechercher un caractère par requête
+            searchCharacter(query) {
+                if (!query) return [];
+
+                // Recherche plus sophistiquée
+                return this.database.filter(char =>
+                    char.character.includes(query) ||
+                    char.traditional.includes(query) ||
+                    char.pinyin.toLowerCase().includes(query.toLowerCase()) ||
+                    char.meaning.toLowerCase().includes(query.toLowerCase())
+                );
+            },
+
+            // Obtenir des radicaux
+            getRadicals() {
+                return [
+                    { radical: "氵", meaning: "eau", examples: ["海", "河", "湖", "洗"] },
+                    { radical: "亻", meaning: "personne", examples: ["你", "他", "们", "休"] },
+                    { radical: "讠", meaning: "parole", examples: ["说", "话", "语", "读"] },
+                    { radical: "宀", meaning: "toit", examples: ["家", "室", "宅", "宁"] },
+                    { radical: "扌", meaning: "main", examples: ["打", "抓", "推", "拉"] },
+                    { radical: "口", meaning: "bouche", examples: ["吃", "喝", "叫", "吗"] },
+                    { radical: "木", meaning: "bois", examples: ["树", "林", "森", "板"] },
+                    { radical: "女", meaning: "femme", examples: ["妈", "姐", "妹", "她"] },
+                    { radical: "心", meaning: "cœur", examples: ["想", "忆", "忘", "恋"] },
+                    { radical: "火", meaning: "feu", examples: ["炒", "烧", "热", "灯"] }
+                ];
+            },
+
+            // Obtenir les traits de base
+            getBasicStrokes() {
+                return [
+                    { name: "横", pinyin: "héng", description: "trait horizontal", example: "一" },
+                    { name: "竖", pinyin: "shù", description: "trait vertical", example: "丨" },
+                    { name: "撇", pinyin: "piě", description: "trait descendant vers la gauche", example: "丿" },
+                    { name: "捺", pinyin: "nà", description: "trait descendant vers la droite", example: "乀" },
+                    { name: "点", pinyin: "diǎn", description: "point", example: "丶" },
+                    { name: "提", pinyin: "tí", description: "trait ascendant", example: "㇀" },
+                    { name: "折", pinyin: "zhé", description: "trait brisé", example: "乛" }
+                ];
+            },
+
+            // Générer un quiz
+            generateQuiz(level, count = 5) {
+                const characters = this.getCharactersByLevel(level);
+                const questions = [];
+                const usedIds = new Set();
+
+                while (questions.length < count && questions.length < characters.length) {
+                    // Choisir un caractère aléatoire
+                    let randomIndex;
+                    let character;
+
+                    do {
+                        randomIndex = Math.floor(Math.random() * characters.length);
+                        character = characters[randomIndex];
+                    } while (usedIds.has(character.id));
+
+                    usedIds.add(character.id);
+
+                    // Créer des options pour le quiz
+                    const options = [
+                        { id: 1, text: character.meaning, correct: true }
+                    ];
+
+                    // Ajouter des options incorrectes
+                    let optionCount = 2;
+                    while (options.length < 4 && optionCount <= characters.length) {
+                        const wrongIndex = (randomIndex + optionCount) % characters.length;
+                        const wrongOption = {
+                            id: optionCount,
+                            text: characters[wrongIndex].meaning,
+                            correct: false
+                        };
+
+                        // S'assurer qu'on n'ajoute pas la même signification
+                        if (!options.some(o => o.text === wrongOption.text)) {
+                            options.push(wrongOption);
+                        }
+
+                        optionCount++;
+                    }
+
+                    // Mélanger les options
+                    const shuffledOptions = [...options].sort(() => Math.random() - 0.5);
+
+                    questions.push({
+                        id: questions.length + 1,
+                        character: character.character,
+                        pinyin: character.pinyin,
+                        traditional: character.traditional,
+                        meaning: character.meaning,
+                        options: shuffledOptions,
+                        examples: character.examples || []
+                    });
+                }
+
+                return questions;
+            }
+        };
+
+        // ===================================
+        // MODÈLE UTILISATEUR (avec localStorage)
+        // ===================================
+
+        const UserProfile = {
+            // État par défaut
+            defaultState: {
+                level: 1,
+                xp: 0,
+                xpToNextLevel: 100,
+                streak: 0,
+                lastLogin: null,
+                learnedCharacters: [],
+                quizResults: [],
+                badges: [
+                    { id: 1, name: "Premier pas", description: "Commencer votre apprentissage", unlocked: false, icon: "🏅" },
+                    { id: 2, name: "Persévérance", description: "Étudier 3 jours d'affilée", unlocked: false, icon: "🔥" },
+                    { id: 3, name: "Vocabulaire", description: "Apprendre 10 caractères", unlocked: false, icon: "📚" },
+                    { id: 4, name: "Quiz master", description: "Réussir un quiz avec un score parfait", unlocked: false, icon: "🎯" },
+                    { id: 5, name: "Calligraphe", description: "Pratiquer l'écriture de 5 caractères", unlocked: false, icon: "✍️" },
+                    { id: 6, name: "Explorateur", description: "Utiliser toutes les fonctionnalités", unlocked: false, icon: "🧭" }
+                ],
+                dailyChallenges: [
+                    { id: 1, name: "Apprendre 3 caractères", progress: 0, total: 3, reward: 30, completed: false },
+                    { id: 2, name: "Compléter un quiz", progress: 0, total: 1, reward: 20, completed: false },
+                    { id: 3, name: "Pratiquer l'écriture", progress: 0, total: 1, reward: 10, completed: false }
+                ],
+                achievements: [],
+                writtenCharacters: []
+            },
+
+            // Obtenir l'état actuel de l'utilisateur depuis localStorage
+            getState() {
+                const storedState = localStorage.getItem('userProfile');
+                if (storedState) {
+                    return JSON.parse(storedState);
+                }
+                return this.defaultState;
+            },
+
+            // Sauvegarder l'état de l'utilisateur dans localStorage
+            saveState(state) {
+                localStorage.setItem('userProfile', JSON.stringify(state));
+            },
+
+            // Mettre à jour le profil utilisateur
+            update(updateFn) {
+                const currentState = this.getState();
+                const newState = updateFn(currentState);
+                this.saveState(newState);
+                return newState;
+            },
+
+            // Initialiser ou mettre à jour le profil utilisateur
+            initialize() {
+                const currentState = this.getState();
+                const today = new Date().toDateString();
+
+                // Vérifier si c'est un nouveau jour
+                if (currentState.lastLogin !== today) {
+                    // Réinitialiser les défis quotidiens
+                    currentState.dailyChallenges.forEach(challenge => {
+                        challenge.progress = 0;
+                        challenge.completed = false;
+                    });
+
+                    // Mettre à jour la streak
+                    if (currentState.lastLogin) {
+                        const yesterday = new Date();
+                        yesterday.setDate(yesterday.getDate() - 1);
+
+                        if (currentState.lastLogin === yesterday.toDateString()) {
+                            currentState.streak += 1;
+
+                            // Vérifier le badge de streak
+                            if (currentState.streak >= 3) {
+                                this.unlockBadge(2, currentState);
+                            }
+                        } else {
+                            currentState.streak = 1;
+                        }
+                    } else {
+                        currentState.streak = 1;
+                    }
+
+                    currentState.lastLogin = today;
+                }
+
+                // Débloquer le badge "Premier pas" à la première utilisation
+                if (currentState.badges[0] && !currentState.badges[0].unlocked) {
+                    this.unlockBadge(1, currentState);
+                }
+
+                this.saveState(currentState);
+                return currentState;
+            },
+
+            // Ajouter de l'XP
+            addXP(amount) {
+                return this.update(state => {
+                    state.xp += amount;
+
+                    // Vérifier si niveau supérieur
+                    if (state.xp >= state.xpToNextLevel) {
+                        state.xp -= state.xpToNextLevel;
+                        state.level += 1;
+                        state.xpToNextLevel = Math.floor(state.xpToNextLevel * 1.2);
+
+                        // Afficher une notification de niveau
+                        UI.showAchievement("Niveau supérieur !", `Vous avez atteint le niveau ${state.level}`, "🌟");
+                        UI.triggerConfetti();
+                    }
+
+                    return state;
+                });
+            },
+
+            // Marquer un caractère comme appris
+            learnCharacter(characterId) {
+                return this.update(state => {
+                    if (!state.learnedCharacters.includes(characterId)) {
+                        state.learnedCharacters.push(characterId);
+
+                        // Mettre à jour le défi quotidien
+                        const learnChallenge = state.dailyChallenges.find(c => c.id === 1);
+                        if (learnChallenge && learnChallenge.progress < learnChallenge.total) {
+                            learnChallenge.progress += 1;
+
+                            if (learnChallenge.progress >= learnChallenge.total && !learnChallenge.completed) {
+                                learnChallenge.completed = true;
+                                this.addXP(learnChallenge.reward);
+                                UI.showAchievement("Défi complété !", `+${learnChallenge.reward} XP`, "🎯");
+                            }
+                        }
+
+                        // Vérifier le badge de vocabulaire
+                        if (state.learnedCharacters.length >= 10) {
+                            this.unlockBadge(3, state);
+                        }
+
+                        this.addXP(5);
+                    }
+
+                    return state;
+                });
+            },
+
+            // Enregistrer le résultat d'un quiz
+            recordQuizResult(result) {
+                return this.update(state => {
+                    state.quizResults.push({
+                        date: new Date().toISOString(),
+                        score: result.score,
+                        total: result.total,
+                        level: result.level
+                    });
+
+                    // Mettre à jour le défi quotidien
+                    const quizChallenge = state.dailyChallenges.find(c => c.id === 2);
+                    if (quizChallenge && quizChallenge.progress < quizChallenge.total) {
+                        quizChallenge.progress += 1;
+
+                        if (quizChallenge.progress >= quizChallenge.total && !quizChallenge.completed) {
+                            quizChallenge.completed = true;
+                            this.addXP(quizChallenge.reward);
+                            UI.showAchievement("Défi complété !", `+${quizChallenge.reward} XP`, "🎯");
+                        }
+                    }
+
+                    // Vérifier le badge de score parfait
+                    if (result.score === result.total) {
+                        this.unlockBadge(4, state);
+                    }
+
+                    this.addXP(result.score * 5);
+                    return state;
+                });
+            },
+
+            // Enregistrer un caractère écrit
+            recordWrittenCharacter(character) {
+                return this.update(state => {
+                    if (!state.writtenCharacters.includes(character)) {
+                        state.writtenCharacters.push(character);
+
+                        // Mettre à jour le défi quotidien
+                        const writingChallenge = state.dailyChallenges.find(c => c.id === 3);
+                        if (writingChallenge && writingChallenge.progress < writingChallenge.total) {
+                            writingChallenge.progress += 1;
+
+                            if (writingChallenge.progress >= writingChallenge.total && !writingChallenge.completed) {
+                                writingChallenge.completed = true;
+                                this.addXP(writingChallenge.reward);
+                                UI.showAchievement("Défi complété !", `+${writingChallenge.reward} XP`, "🎯");
+                            }
+                        }
+
+                        // Vérifier le badge de calligraphie
+                        if (state.writtenCharacters.length >= 5) {
+                            this.unlockBadge(5, state);
+                        }
+
+                        this.addXP(5);
+                    }
+
+                    return state;
+                });
+            },
+
+            // Débloquer un badge
+            unlockBadge(badgeId, state = null) {
+                if (!state) {
+                    return this.update(state => {
+                        return this.unlockBadge(badgeId, state);
+                    });
+                }
+
+                const badge = state.badges.find(b => b.id === badgeId);
+                if (badge && !badge.unlocked) {
+                    badge.unlocked = true;
+
+                    // Ajouter une réussite
+                    state.achievements.push({
+                        type: 'badge',
+                        badgeId: badgeId,
+                        date: new Date().toISOString(),
+                        description: `Badge débloqué: ${badge.name}`
+                    });
+
+                    // Afficher une notification
+                    UI.showAchievement("Badge débloqué !", `${badge.name} - ${badge.description}`, badge.icon);
+
+                    // Ajouter de l'XP pour le badge
+                    this.addXP(30);
+                }
+
+                return state;
+            },
+
+            // Vérifier si toutes les fonctionnalités ont été utilisées
+            checkAllFeaturesUsed() {
+                return this.update(state => {
+                    // Vérifier si toutes les fonctionnalités principales ont été utilisées
+                    if (state.learnedCharacters.length > 0 &&
+                        state.quizResults.length > 0 &&
+                        state.writtenCharacters.length > 0) {
+                        this.unlockBadge(6, state);
+                    }
+                    return state;
+                });
+            }
+        };
+
+        // ===================================
+        // CONTRÔLEUR D'INTERFACE UTILISATEUR
+        // ===================================
+
+        const UI = {
+            // Initialiser l'interface utilisateur
+            init() {
+                this.setupNavigation();
+                this.setupTabs();
+                this.updateUserProfile();
+                this.setupLearnSection();
+                this.setupQuizSection();
+                this.setupWritingSection();
+                this.setupStrokeOrderSection();
+                this.setupDictionarySection();
+                this.setupChallengesSection();
+                this.setupAchievementsSection();
+                this.setupModals();
+
+                // Mettre à jour les statistiques
+                this.updateStats();
+            },
+
+            // Configurer la navigation
+            setupNavigation() {
+                const navLinks = document.querySelectorAll('.nav-link');
+
+                navLinks.forEach(link => {
+                    link.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const section = link.getAttribute('data-section');
+                        this.activateSection(section);
+                    });
+                });
+            },
+
+            // Activer une section
+            activateSection(sectionId) {
+                // Mettre à jour les liens de navigation
+                const navLinks = document.querySelectorAll('.nav-link');
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('data-section') === sectionId) {
+                        link.classList.add('active');
+                    }
+                });
+
+                // Mettre à jour les sections
+                const sections = document.querySelectorAll('.section');
+                sections.forEach(section => {
+                    section.classList.remove('active');
+                    if (section.id === sectionId) {
+                        section.classList.add('active');
+                    }
+                });
+
+                // Défiler vers le haut
+                window.scrollTo(0, 0);
+            },
+
+            // Naviguer vers une section
+            navigateTo(sectionId) {
+                this.activateSection(sectionId);
+            },
+
+            // Configurer les onglets à l'intérieur des sections
+            setupTabs() {
+                const tabButtons = document.querySelectorAll('.tab-button');
+
+                tabButtons.forEach(button => {
+                    button.addEventListener('click', () => {
+                        const tabId = button.getAttribute('data-tab');
+                        const tabContainer = button.closest('.section');
+
+                        // Mettre à jour les boutons d'onglet
+                        tabContainer.querySelectorAll('.tab-button').forEach(btn => {
+                            btn.classList.remove('active');
+                        });
+                        button.classList.add('active');
+
+                        // Mettre à jour le contenu des onglets
+                        tabContainer.querySelectorAll('.tab-content').forEach(content => {
+                            content.classList.remove('active');
+                        });
+                        document.getElementById(`${tabId}-tab`).classList.add('active');
+                    });
+                });
+            },
+
+            // Mettre à jour l'affichage du profil utilisateur
+            updateUserProfile() {
+                const user = UserProfile.initialize();
+                document.getElementById('user-level').textContent = user.level;
+                document.getElementById('user-xp-text').textContent = `${user.xp}/${user.xpToNextLevel} XP`;
+                document.getElementById('user-xp-bar').style.width = `${(user.xp / user.xpToNextLevel) * 100}%`;
+                document.getElementById('user-streak').textContent = user.streak;
+            },
+
+            // Mettre à jour les statistiques
+            updateStats() {
+                const user = UserProfile.getState();
+                const statsContainer = document.getElementById('stats-container');
+                const achievementStats = document.getElementById('achievement-stats');
+
+                // Récupérer les données actualisées de chaque niveau HSK
+                const getHSKLevelData = async () => {
+                    try {
+                        const hsk1Data = await ChineseAPI.getCharactersByLevel("HSK1");
+                        const hsk1Count = hsk1Data.success ? hsk1Data.data.length : 0;
+
+                        // Calculer les statistiques
+                        const charactersLearned = user.learnedCharacters.length;
+                        const quizAverage = user.quizResults.length > 0
+                            ? Math.round((user.quizResults.reduce((sum, quiz) => sum + (quiz.score / quiz.total), 0) / user.quizResults.length) * 100)
+                            : 0;
+
+                        // Estimer le niveau HSK basé sur les caractères appris
+                        let estimatedLevel = "Débutant";
+                        if (charactersLearned >= hsk1Count * 0.8) {
+                            estimatedLevel = "HSK1 Maîtrisé";
+                        } else if (charactersLearned >= hsk1Count * 0.5) {
+                            estimatedLevel = "HSK1 Avancé";
+                        } else if (charactersLearned >= hsk1Count * 0.2) {
+                            estimatedLevel = "HSK1 Intermédiaire";
+                        } else if (charactersLearned > 0) {
+                            estimatedLevel = "HSK1 Débutant";
+                        }
+
+                        // Mettre à jour les statistiques d'accueil
+                        statsContainer.innerHTML = `
+                            <div class="stat-box">
+                                <div class="stat-number">${charactersLearned}</div>
+                                <div class="stat-label">Caractères appris</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-number">${user.streak}</div>
+                                <div class="stat-label">Jours d'affilée</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-number">${quizAverage}%</div>
+                                <div class="stat-label">Précision des quiz</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-number">${estimatedLevel}</div>
+                                <div class="stat-label">Niveau estimé</div>
+                            </div>
+                        `;
+
+                        // Mettre à jour les statistiques de réussite
+                        if (achievementStats) {
+                            achievementStats.innerHTML = `
+                                <div class="stat-box">
+                                    <div class="stat-number">${user.level}</div>
+                                    <div class="stat-label">Niveau</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-number">${user.streak}</div>
+                                    <div class="stat-label">Jours d'affilée</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-number">${user.badges.filter(b => b.unlocked).length}</div>
+                                    <div class="stat-label">Badges débloqués</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-number">${user.achievements.length}</div>
+                                    <div class="stat-label">Réussites totales</div>
+                                </div>
+                            `;
+                        }
+                    } catch (error) {
+                        console.error("Error updating stats:", error);
+                        // En cas d'erreur, utiliser une mise à jour simplifiée
+                        const charactersLearned = user.learnedCharacters.length;
+                        statsContainer.innerHTML = `
+                            <div class="stat-box">
+                                <div class="stat-number">${charactersLearned}</div>
+                                <div class="stat-label">Caractères appris</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-number">${user.streak}</div>
+                                <div class="stat-label">Jours d'affilée</div>
+                            </div>
+                        `;
+                    }
+                };
+
+                // Exécuter la récupération de données
+                getHSKLevelData();
+            },
+
+            // Configurer la section d'apprentissage
+            // Configurer la section d'apprentissage avec chargement infini
+            setupLearnSection() {
+                const hskSelector = document.getElementById('hsk-level-selector');
+                const markAsLearnedBtn = document.getElementById('mark-as-learned-btn');
+                const charactersGrid = document.getElementById('characters-grid');
+                const characterDetail = document.getElementById('character-detail');
+                let currentCharacter = null;
+
+                // Variables pour le chargement infini
+                let currentOffset = 0;
+                let currentLimit = 20; // Nombre de caractères à charger à chaque fois
+                let isLoading = false;
+                let hasMoreToLoad = true;
+                let currentLevel = "HSK1";
+
+                // Mise à jour du sélecteur HSK pour correspondre aux niveaux disponibles dans l'API
+                hskSelector.innerHTML = `
+        <option value="HSK1">HSK Niveau 1 (Fréquent)</option>
+        <option value="HSK2">HSK Niveau 2 (Commun)</option>
+        <option value="HSK3">HSK Niveau 3 (Moins commun)</option>
+        <option value="ALL">Tous les caractères</option>
+    `;
+
+                // Charger les caractères de manière incrémentale
+                const loadCharacters = async (level, offset = 0, append = false) => {
+                    if (isLoading) return;
+
+                    currentLevel = level;
+                    isLoading = true;
+
+                    try {
+                        // Ajouter un indicateur de chargement en bas de la grille si on ajoute des caractères
+                        if (append) {
+                            const loadingIndicator = document.createElement('div');
+                            loadingIndicator.className = 'loading-indicator';
+                            loadingIndicator.style.textAlign = 'center';
+                            loadingIndicator.style.padding = '1rem';
+                            loadingIndicator.style.gridColumn = '1 / -1';
+                            loadingIndicator.innerHTML = `
+                    <div class="loading-spinner" style="width: 30px; height: 30px;"></div>
+                    <p>Chargement...</p>
+                `;
+                            charactersGrid.appendChild(loadingIndicator);
+                        } else {
+                            // Afficher un état de chargement complet si on recharge tout
+                            charactersGrid.innerHTML = `
+                    <div class="loading-container">
+                        <div class="loading-spinner"></div>
+                        <p>Chargement des caractères...</p>
+                    </div>
+                `;
+                        }
+
+                        // Appel API
+                        const response = await ChineseAPI.getCharactersByLevel(level, offset, currentLimit);
+                        const characters = response.data;
+                        const userState = UserProfile.getState();
+
+                        // Si on recharge tout, effacer la grille
+                        if (!append) {
+                            charactersGrid.innerHTML = '';
+                        } else {
+                            // Sinon, simplement supprimer l'indicateur de chargement
+                            const loadingIndicator = charactersGrid.querySelector('.loading-indicator');
+                            if (loadingIndicator) {
+                                loadingIndicator.remove();
+                            }
+                        }
+
+                        // Si la réponse n'était pas un succès, afficher un message
+                        if (!response.success) {
+                            if (!append) {
+                                charactersGrid.innerHTML = `
+                        <div class="card">
+                            <p>${response.message}</p>
+                        </div>
+                    `;
+                            } else {
+                                const errorMsg = document.createElement('div');
+                                errorMsg.className = 'card';
+                                errorMsg.style.gridColumn = '1 / -1';
+                                errorMsg.innerHTML = `<p>${response.message}</p>`;
+                                charactersGrid.appendChild(errorMsg);
+                            }
+                        }
+
+                        // Pas de caractères trouvés
+                        if (characters.length === 0) {
+                            if (!append) {
+                                charactersGrid.innerHTML = `
+                        <div class="card">
+                            <p>Aucun caractère trouvé pour ce niveau.</p>
+                        </div>
+                    `;
+                            }
+                            // Si nous n'avons pas trouvé de caractères lors d'un chargement supplémentaire,
+                            // c'est qu'il n'y en a plus à charger
+                            hasMoreToLoad = false;
+                        } else {
+                            // Mettre à jour l'offset pour le prochain chargement
+                            currentOffset = offset + characters.length;
+
+                            // Vérifier s'il y a potentiellement plus de caractères à charger
+                            hasMoreToLoad = characters.length >= currentLimit;
+
+                            // Afficher les caractères avec les informations de HanziBase
+                            characters.forEach(char => {
+                                const isLearned = userState.learnedCharacters.includes(char.id);
+
+                                const charCard = document.createElement('div');
+                                charCard.className = `card character-card ${isLearned ? 'learned' : ''}`;
+                                charCard.style.position = 'relative';
+
+                                // Mise à jour pour inclure les nouvelles informations disponibles
+                                charCard.innerHTML = `
+                        <div class="character">${char.character}</div>
+                        <div class="pronunciation">${char.pinyin}</div>
+                        <div class="meaning">${char.meaning}</div>
+                        <div style="font-size: 0.8rem; margin-top: 0.5rem;">
+                            <span title="Nombre de traits">Traits: ${char.strokes || '?'}</span> | 
+                            <span title="Radical">Rad: ${char.radical || '?'}</span>
+                        </div>
+                        ${isLearned ? '<div style="position: absolute; top: 10px; right: 10px; color: green;">✓</div>' : ''}
+                    `;
+
+                                charCard.addEventListener('click', () => {
+                                    showCharacterDetail(char);
+                                    currentCharacter = char;
+                                    markAsLearnedBtn.textContent = isLearned ? 'Déjà appris' : 'Marquer comme appris';
+                                    markAsLearnedBtn.disabled = isLearned;
+                                });
+
+                                charactersGrid.appendChild(charCard);
+                            });
+                        }
+                    } catch (error) {
+                        console.error("Error loading characters:", error);
+                        if (!append) {
+                            charactersGrid.innerHTML = `
+                    <div class="card">
+                        <p>Erreur lors du chargement des caractères. Veuillez réessayer.</p>
+                    </div>
+                `;
+                        } else {
+                            const errorMsg = document.createElement('div');
+                            errorMsg.className = 'card';
+                            errorMsg.style.gridColumn = '1 / -1';
+                            errorMsg.innerHTML = `<p>Erreur lors du chargement de caractères supplémentaires.</p>`;
+                            charactersGrid.appendChild(errorMsg);
+                        }
+                    } finally {
+                        isLoading = false;
+                    }
+                };
+
+                // Afficher les détails d'un caractère
+                const showCharacterDetail = async (character) => {
+                    // Masquer le détail pendant le chargement sur mobile
+                    if (window.innerWidth < 768) {
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+
+                    // Afficher un état de chargement
+                    characterDetail.style.display = 'block';
+                    characterDetail.innerHTML = `
+            <div class="loading-container">
+                <div class="loading-spinner"></div>
+                <p>Chargement des détails...</p>
+            </div>
+        `;
+
+                    try {
+                        // Appel API pour obtenir plus de détails
+                        const response = await ChineseAPI.getCharacterDetails(character.character);
+                        const details = response.data || character;
+
+                        // Récupérer les informations spécifiques à HanziBase
+                        const strokeCount = details.strokes || '?';
+                        const radical = details.radical || '?';
+                        const tradChar = details.traditional !== details.character ?
+                            details.traditional : 'Identique au simplifié';
+
+                        // Mettre à jour le conteneur de détails avec les nouvelles informations
+                        characterDetail.innerHTML = `
+                <div class="character-detail">
+                    <div class="character-info">
+                        <h3>${details.character} ${details.traditional !== details.character ? `(${details.traditional})` : ''}</h3>
+                        <p><strong>Pinyin:</strong> ${details.pinyin}</p>
+                        <p><strong>Signification:</strong> ${details.meaning}</p>
+                        <p><strong>Forme traditionnelle:</strong> ${tradChar}</p>
+                        <p><strong>Niveau HSK:</strong> ${details.level}</p>
+                        <p><strong>Nombre de traits:</strong> ${strokeCount}</p>
+                        <p><strong>Radical:</strong> ${radical}</p>
+                        
+                        <div class="character-example">
+                            <h4>Exemples:</h4>
+                            <ul>
+                                ${details.examples.map(ex => `<li class="character-example-item">${ex}</li>`).join('')}
+                            </ul>
+                        </div>
+                        
+                        ${details.etymology ? `
+                            <div class="character-example">
+                                <h4>Étymologie:</h4>
+                                <p>${details.etymology}</p>
+                            </div>
+                        ` : ''}
+                        
+                        ${details.components && details.components.length > 0 ? `
+                            <div class="character-example">
+                                <h4>Composants:</h4>
+                                <ul>
+                                    ${details.components.map(comp => `<li>${comp.component} - ${comp.meaning}</li>`).join('')}
+                                </ul>
+                            </div>
+                        ` : ''}
+                    </div>
+                    <div class="character-writer" id="learn-character-writer">
+                        <!-- Character animator will be inserted here -->
+                    </div>
+                </div>
+            `;
+
+                        // Initialiser l'animation de caractère
+                        try {
+                            const writer = HanziWriter.create('learn-character-writer', details.character, {
+                                width: 300,
+                                height: 300,
+                                padding: 5,
+                                strokeColor: '#333',
+                                delayBetweenStrokes: 300
+                            });
+
+                            writer.animateCharacter();
+                        } catch (err) {
+                            console.error('Error initializing character writer:', err);
+                            document.getElementById('learn-character-writer').innerHTML = `
+                    <div style="text-align: center;">
+                        <p>Erreur d'animation du caractère.</p>
+                        <div class="character" style="font-size: 8rem;">${details.character}</div>
+                    </div>
+                `;
+                        }
+                    } catch (error) {
+                        console.error("Error fetching character details:", error);
+                        characterDetail.innerHTML = `
+                <div class="card">
+                    <p>Erreur lors du chargement des détails. Veuillez réessayer.</p>
+                </div>
+            `;
+                    }
+                };
+
+                // Fonction pour détecter quand l'utilisateur a atteint le bas de la page
+                const checkScrollPosition = () => {
+                    if (!hasMoreToLoad || isLoading) return;
+
+                    const scrollSection = document.getElementById('learn');
+                    if (!scrollSection) return;
+
+                    // Calculer si on est proche du bas
+                    const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
+                    const scrollBottom = scrollTop + clientHeight;
+
+                    // Si on est à moins de 200px du bas de la page
+                    if (scrollHeight - scrollBottom < 200) {
+                        // Charger plus de caractères
+                        loadCharacters(currentLevel, currentOffset, true);
+                    }
+                };
+
+                // Ajouter un écouteur d'événements de défilement avec limitation de débit
+                let scrollTimeout;
+                window.addEventListener('scroll', () => {
+                    if (document.getElementById('learn').classList.contains('active')) {
+                        clearTimeout(scrollTimeout);
+                        scrollTimeout = setTimeout(checkScrollPosition, 100);
+                    }
+                });
+
+                // Gérer la sélection de niveau
+                hskSelector.addEventListener('change', () => {
+                    currentOffset = 0;
+                    hasMoreToLoad = true;
+                    loadCharacters(hskSelector.value, 0, false);
+                    characterDetail.style.display = 'none';
+                });
+
+                // Gérer le bouton "Marquer comme appris"
+                markAsLearnedBtn.addEventListener('click', () => {
+                    if (currentCharacter) {
+                        UserProfile.learnCharacter(currentCharacter.id);
+
+                        // Mettre à jour visuellement la carte du caractère dans la grille
+                        const cards = charactersGrid.querySelectorAll('.character-card');
+                        for (const card of cards) {
+                            const cardChar = card.querySelector('.character')?.textContent;
+                            if (cardChar === currentCharacter.character) {
+                                card.classList.add('learned');
+                                const checkmark = document.createElement('div');
+                                checkmark.style.position = 'absolute';
+                                checkmark.style.top = '10px';
+                                checkmark.style.right = '10px';
+                                checkmark.style.color = 'green';
+                                checkmark.textContent = '✓';
+                                card.appendChild(checkmark);
+                                break;
+                            }
+                        }
+
+                        showCharacterDetail(currentCharacter);
+                        markAsLearnedBtn.textContent = 'Déjà appris';
+                        markAsLearnedBtn.disabled = true;
+
+                        // Mettre à jour le profil utilisateur et les statistiques
+                        this.updateUserProfile();
+                        this.updateStats();
+                    }
+                });
+
+                // Ajouter un style pour indiquer quand on charge plus de caractères
+                const style = document.createElement('style');
+                style.textContent = `
+        @keyframes pulsate {
+            0% { opacity: 0.4; }
+            50% { opacity: 0.8; }
+            100% { opacity: 0.4; }
+        }
+        .loading-indicator .loading-spinner {
+            animation: spin 1s linear infinite, pulsate 1.5s ease-in-out infinite;
+            margin: 0 auto;
+        }
+    `;
+                document.head.appendChild(style);
+
+                // Initialiser avec le niveau par défaut
+                loadCharacters(hskSelector.value, 0, false);
+            },
+
+            // Configurer la section de quiz
+            setupQuizSection() {
+                const quizLevelSelector = document.getElementById('quiz-level-selector');
+                const startQuizBtn = document.getElementById('start-quiz-btn');
+                const quizContainer = document.getElementById('quiz-container');
+                let currentQuiz = [];
+                let currentQuestionIndex = 0;
+                let quizScore = 0;
+
+                // Mise à jour du sélecteur HSK pour correspondre aux niveaux disponibles dans l'API
+                quizLevelSelector.innerHTML = `
+                    <option value="HSK1">HSK Niveau 1 (Fréquent)</option>
+                    <option value="HSK2">HSK Niveau 2 (Commun)</option>
+                    <option value="HSK3">HSK Niveau 3 (Moins commun)</option>
+                    <option value="ALL">Tous les caractères</option>
+                `;
+
+                // Commencer un nouveau quiz
+                const startQuiz = async () => {
+                    const level = quizLevelSelector.value;
+
+                    // Afficher un état de chargement
+                    quizContainer.style.display = 'block';
+                    quizContainer.innerHTML = `
+                        <div class="loading-container">
+                            <div class="loading-spinner"></div>
+                            <p>Génération du quiz basé sur HanziBase...</p>
+                        </div>
+                    `;
+
+                    try {
+                        // Générer un quiz basé sur les caractères du niveau sélectionné
+                        const characters = await ChineseAPI.getCharactersByLevel(level);
+                        currentQuiz = HanziDB.generateQuiz(level, 5);
+
+                        // Si nous avons des données de l'API, utiliser celles-ci pour générer un quiz
+                        if (characters.success && characters.data.length > 0) {
+                            // Créer un quiz avec les caractères obtenus de l'API
+                            currentQuiz = [];
+                            const usedIds = new Set();
+
+                            while (currentQuiz.length < 5 && currentQuiz.length < characters.data.length) {
+                                const randomIndex = Math.floor(Math.random() * characters.data.length);
+                                const character = characters.data[randomIndex];
+
+                                if (!usedIds.has(character.id)) {
+                                    usedIds.add(character.id);
+
+                                    // Créer des options pour le quiz
+                                    const options = [
+                                        { id: 1, text: character.meaning, correct: true }
+                                    ];
+
+                                    // Ajouter des options incorrectes
+                                    let optionCount = 2;
+                                    while (options.length < 4 && optionCount <= characters.data.length) {
+                                        const wrongIndex = (randomIndex + optionCount) % characters.data.length;
+                                        const wrongOption = {
+                                            id: optionCount,
+                                            text: characters.data[wrongIndex].meaning,
+                                            correct: false
+                                        };
+
+                                        // S'assurer qu'on n'ajoute pas la même signification
+                                        if (!options.some(o => o.text === wrongOption.text)) {
+                                            options.push(wrongOption);
+                                        }
+
+                                        optionCount++;
+                                    }
+
+                                    // Mélanger les options
+                                    const shuffledOptions = [...options].sort(() => Math.random() - 0.5);
+
+                                    currentQuiz.push({
+                                        id: currentQuiz.length + 1,
+                                        character: character.character,
+                                        pinyin: character.pinyin,
+                                        traditional: character.traditional,
+                                        meaning: character.meaning,
+                                        options: shuffledOptions,
+                                        examples: character.examples || [],
+                                        strokes: character.strokes,
+                                        radical: character.radical
+                                    });
+                                }
+                            }
+                        }
+
+                        currentQuestionIndex = 0;
+                        quizScore = 0;
+
+                        if (currentQuiz.length > 0) {
+                            showQuestion(currentQuiz[0]);
+                        } else {
+                            quizContainer.innerHTML = '<p>Impossible de générer un quiz. Veuillez essayer un autre niveau.</p>';
+                        }
+                    } catch (error) {
+                        console.error("Error generating quiz:", error);
+                        quizContainer.innerHTML = '<p>Erreur lors de la génération du quiz. Veuillez réessayer.</p>';
+                    }
+                };
+
+                // Afficher une question
+                const showQuestion = (question) => {
+                    quizContainer.innerHTML = `
+                        <div class="progress-bar">
+                            <div class="progress-value" style="width: ${(currentQuestionIndex / currentQuiz.length) * 100}%"></div>
+                        </div>
+                        
+                        <div style="text-align: center; margin: 1rem 0;">
+                            Question ${currentQuestionIndex + 1} sur ${currentQuiz.length}
+                        </div>
+                        
+                        <div class="quiz-question">
+                            ${question.character} (${question.pinyin})
+                        </div>
+                        
+                        <div style="text-align: center; margin: 0.5rem 0; font-size: 0.9rem; color: #666;">
+                            ${question.strokes ? `Traits: ${question.strokes}` : ''} 
+                            ${question.radical ? `| Radical: ${question.radical}` : ''}
+                        </div>
+                        
+                        <div class="quiz-options">
+                            ${question.options.map(option => `
+                                <div class="quiz-option" data-option-id="${option.id}" data-correct="${option.correct}">
+                                    ${option.text}
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                    // Ajouter un événement de clic aux options
+                    const options = quizContainer.querySelectorAll('.quiz-option');
+                    options.forEach(option => {
+                        option.addEventListener('click', handleOptionClick);
+                    });
+                };
+
+                // Gérer le clic sur une option
+                const handleOptionClick = (e) => {
+                    const option = e.target;
+                    const isCorrect = option.getAttribute('data-correct') === 'true';
+
+                    // Désactiver toutes les options
+                    const options = quizContainer.querySelectorAll('.quiz-option');
+                    options.forEach(opt => {
+                        opt.removeEventListener('click', handleOptionClick);
+
+                        if (opt.getAttribute('data-correct') === 'true') {
+                            opt.classList.add('correct');
+                        } else if (opt === option && !isCorrect) {
+                            opt.classList.add('incorrect');
+                        }
+                    });
+
+                    // Mettre à jour le score
+                    if (isCorrect) {
+                        quizScore++;
+                    }
+
+                    // Afficher l'explication
+                    const question = currentQuiz[currentQuestionIndex];
+                    const explanation = document.createElement('div');
+                    explanation.style.marginTop = '2rem';
+                    explanation.style.padding = '1rem';
+                    explanation.style.backgroundColor = '#f8f9fa';
+                    explanation.style.borderRadius = '8px';
+
+                    explanation.innerHTML = `
+                        <h4 style="margin-bottom: 0.5rem;">Explication:</h4>
+                        <p>Le caractère <strong>${question.character}</strong> (<em>${question.pinyin}</em>) signifie <strong>"${question.meaning}"</strong>.</p>
+                        
+                        ${question.strokes ? `<p>Nombre de traits: <strong>${question.strokes}</strong></p>` : ''}
+                        ${question.radical ? `<p>Radical: <strong>${question.radical}</strong></p>` : ''}
+                        
+                        ${question.examples && question.examples.length > 0 ? `
+                            <div style="margin-top: 1rem;">
+                                <h4>Exemples:</h4>
+                                <ul style="padding-left: 1.5rem; margin-top: 0.5rem;">
+                                    ${question.examples.map(example => `<li>${example}</li>`).join('')}
+                                </ul>
+                            </div>
+                        ` : ''}
+                        
+                        <button class="btn" style="margin-top: 1.5rem;">Question suivante</button>
+                    `;
+
+                    quizContainer.appendChild(explanation);
+
+                    // Ajouter un événement de clic au bouton suivant
+                    explanation.querySelector('button').addEventListener('click', () => {
+                        currentQuestionIndex++;
+
+                        if (currentQuestionIndex < currentQuiz.length) {
+                            showQuestion(currentQuiz[currentQuestionIndex]);
+                        } else {
+                            showResult();
+                        }
+                    });
+                };
+
+                // Afficher le résultat du quiz
+                const showResult = () => {
+                    const percentage = Math.round((quizScore / currentQuiz.length) * 100);
+                    let feedback = '';
+
+                    if (percentage >= 90) {
+                        feedback = "Excellent ! Vous maîtrisez très bien ces caractères.";
+                    } else if (percentage >= 70) {
+                        feedback = "Très bien ! Continuez à pratiquer pour vous améliorer.";
+                    } else if (percentage >= 50) {
+                        feedback = "Pas mal ! Avec un peu plus de pratique, vous progresserez rapidement.";
+                    } else {
+                        feedback = "Continuez à apprendre ! La régularité est la clé de l'apprentissage.";
+                    }
+
+                    quizContainer.innerHTML = `
+                        <h3>Résultat du quiz</h3>
+                        <div style="text-align: center; margin: 2rem 0; font-size: 1.2rem;">
+                            Vous avez obtenu ${quizScore} sur ${currentQuiz.length} (${percentage}%) !
+                        </div>
+                        <p style="margin-bottom: 2rem;">${feedback}</p>
+                        <button class="btn">Nouveau Quiz</button>
+                    `;
+
+                    // Ajouter un événement de clic au bouton nouveau quiz
+                    quizContainer.querySelector('button').addEventListener('click', startQuiz);
+
+                    // Enregistrer le résultat du quiz
+                    UserProfile.recordQuizResult({
+                        score: quizScore,
+                        total: currentQuiz.length,
+                        level: quizLevelSelector.value
+                    });
+
+                    // Mettre à jour le profil utilisateur et les statistiques
+                    this.updateUserProfile();
+                    this.updateStats();
+
+                    // Vérifier toutes les fonctionnalités
+                    UserProfile.checkAllFeaturesUsed();
+                };
+
+                // Événement pour le bouton de démarrage du quiz
+                startQuizBtn.addEventListener('click', startQuiz);
+            },
+
+            // Configurer la section d'écriture
+            setupWritingSection() {
+                const canvas = document.getElementById('writing-canvas');
+                const clearButton = document.getElementById('clear-canvas-btn');
+                const ctx = canvas.getContext('2d');
+                const resultsContainer = document.getElementById('recognition-results');
+                const resultsGrid = document.getElementById('results-container');
+                let isDrawing = false;
+                let lastX = 0;
+                let lastY = 0;
+
+                // Ajouter un message de diagnostic au-dessus du canvas
+                const diagnosticMsg = document.createElement('div');
+
+                canvas.parentNode.insertBefore(diagnosticMsg, canvas);
+
+                // Configurer le canvas avec des dimensions fixes
+                function setupCanvas() {
+                    // Définir les dimensions du canvas en pixels
+                    const canvasWidth = 300;
+                    const canvasHeight = 300;
+
+                    // Définir les attributs width/height du canvas (pas les styles CSS)
+                    canvas.width = canvasWidth;
+                    canvas.height = canvasHeight;
+
+                    // Configurer le contexte de dessin
+                    ctx.lineWidth = 8;
+                    ctx.lineCap = 'round';
+                    ctx.lineJoin = 'round';
+                    ctx.strokeStyle = 'black';
+
+                    // Dessiner un cadre autour du canvas pour mieux visualiser la zone de dessin
+                    ctx.strokeRect(0, 0, canvasWidth, canvasHeight);
+
+                    // Ajouter un style au canvas pour s'assurer qu'il est visible
+                    canvas.style.border = '1px solid #ddd';
+                    canvas.style.backgroundColor = 'white';
+                    canvas.style.touchAction = 'none'; // Empêche le défilement sur les appareils tactiles
+                    canvas.style.cursor = 'crosshair';
+                }
+
+                setupCanvas();
+
+                // Fonctions de dessin
+                function startDrawing(e) {
+                    isDrawing = true;
+
+                    // Calculer les coordonnées correctes
+                    const rect = canvas.getBoundingClientRect();
+                    lastX = e.clientX - rect.left;
+                    lastY = e.clientY - rect.top;
+
+                    // Marquer le début d'un nouveau trait
+                    ctx.beginPath();
+                    ctx.moveTo(lastX, lastY);
+
+                    // Dessiner un point là où l'utilisateur a commencé à dessiner
+                    ctx.arc(lastX, lastY, ctx.lineWidth / 2, 0, Math.PI * 2, false);
+                    ctx.fill();
+
+
+                }
+
+                function startDrawingTouch(e) {
+                    e.preventDefault(); // Empêcher le défilement de la page
+
+                    if (e.touches && e.touches.length > 0) {
+                        isDrawing = true;
+
+                        const rect = canvas.getBoundingClientRect();
+                        const touch = e.touches[0];
+                        lastX = touch.clientX - rect.left;
+                        lastY = touch.clientY - rect.top;
+
+                        // Marquer le début d'un nouveau trait
+                        ctx.beginPath();
+                        ctx.moveTo(lastX, lastY);
+
+                        // Dessiner un point là où l'utilisateur a commencé à dessiner
+                        ctx.arc(lastX, lastY, ctx.lineWidth / 2, 0, Math.PI * 2, false);
+                        ctx.fill();
+
+
+                    }
+                }
+
+                function draw(e) {
+                    if (!isDrawing) return;
+
+                    const rect = canvas.getBoundingClientRect();
+                    const currentX = e.clientX - rect.left;
+                    const currentY = e.clientY - rect.top;
+
+                    // Dessiner une ligne du dernier point au point actuel
+                    ctx.beginPath();
+                    ctx.moveTo(lastX, lastY);
+                    ctx.lineTo(currentX, currentY);
+                    ctx.stroke();
+
+                    // Mettre à jour les coordonnées pour le prochain mouvement
+                    lastX = currentX;
+                    lastY = currentY;
+
+
+                }
+
+                function drawTouch(e) {
+                    if (!isDrawing) return;
+                    e.preventDefault(); // Empêcher le défilement de la page
+
+                    if (e.touches && e.touches.length > 0) {
+                        const rect = canvas.getBoundingClientRect();
+                        const touch = e.touches[0];
+                        const currentX = touch.clientX - rect.left;
+                        const currentY = touch.clientY - rect.top;
+
+                        // Dessiner une ligne du dernier point au point actuel
+                        ctx.beginPath();
+                        ctx.moveTo(lastX, lastY);
+                        ctx.lineTo(currentX, currentY);
+                        ctx.stroke();
+
+                        // Mettre à jour les coordonnées pour le prochain mouvement
+                        lastX = currentX;
+                        lastY = currentY;
+
+
+                    }
+                }
+
+                async function stopDrawing() {
+                    if (!isDrawing) return;
+
+                    isDrawing = false;
+
+                    // Récupérer les données de l'image du canvas
+                    const imageData = canvas.toDataURL('image/png');
+
+                    // Afficher un indicateur de chargement
+                    resultsContainer.style.display = 'block';
+                    resultsGrid.innerHTML = `
+            <div class="loading-container">
+                <div class="loading-spinner"></div>
+                <p>Reconnaissance en cours...</p>
+            </div>
+        `;
+
+                    try {
+                        // Appel API pour la reconnaissance d'écriture
+                        const response = await ChineseAPI.recognizeHandwriting(imageData);
+
+                        if (response.success && response.data.length > 0) {
+                            // Afficher les résultats
+                            resultsGrid.innerHTML = '';
+
+
+                            // Garder une référence à UI pour l'utiliser dans l'événement
+                            const uiReference = UI;
+
+                            response.data.forEach(result => {
+                                const resultItem = document.createElement('div');
+                                resultItem.className = 'card';
+                                resultItem.style.textAlign = 'center';
+                                resultItem.style.cursor = 'pointer';
+
+                                resultItem.innerHTML = `
+                        <div style="font-size: 2rem;">${result.character}</div>
+                        <div style="font-size: 0.8rem; color: #666;">${Math.round(result.score * 100)}%</div>
+                    `;
+
+                                resultItem.addEventListener('click', function () {
+                                    // Traiter la sélection de caractère
+                                    const charInfo = result.details ? {
+                                        character: result.character,
+                                        ...result.details
+                                    } : HanziDB.searchCharacter(result.character)[0];
+
+                                    if (charInfo) {
+                                        // Enregistrer le caractère écrit
+                                        UserProfile.recordWrittenCharacter(result.character);
+                                        uiReference.updateUserProfile();
+                                        uiReference.updateStats();
+
+                                        // Afficher les infos du caractère dans la modale
+                                        uiReference.showCharacterModal(charInfo);
+
+                                        // Vérifier toutes les fonctionnalités
+                                        UserProfile.checkAllFeaturesUsed();
+                                    }
+                                });
+
+                                resultsGrid.appendChild(resultItem);
+                            });
+                        } else {
+
+                            resultsGrid.innerHTML = `
+                    <div class="card">
+                        <p>Aucun caractère reconnu. Essayez de dessiner plus clairement.</p>
+                    </div>
+                `;
+                        }
+                    } catch (error) {
+                        console.error("Error recognizing handwriting:", error);
+
+                        resultsGrid.innerHTML = `
+                <div class="card">
+                    <p>Erreur lors de la reconnaissance. Veuillez réessayer.</p>
+                </div>
+            `;
+                    }
+                }
+
+                function clearCanvas() {
+                    // Effacer complètement le canvas
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                    // Redessiner le cadre
+                    ctx.strokeRect(0, 0, canvas.width, canvas.height);
+
+                    // Réinitialiser le message et masquer les résultats
+
+                    resultsContainer.style.display = 'none';
+                }
+
+                // Supprimer les écouteurs existants s'il y en a (pour éviter les doublons)
+                canvas.removeEventListener('mousedown', startDrawing);
+                canvas.removeEventListener('touchstart', startDrawingTouch);
+                canvas.removeEventListener('mousemove', draw);
+                canvas.removeEventListener('touchmove', drawTouch);
+                canvas.removeEventListener('mouseup', stopDrawing);
+                canvas.removeEventListener('touchend', stopDrawing);
+                canvas.removeEventListener('mouseout', stopDrawing);
+
+                // Ajouter les écouteurs d'événements pour le dessin
+                canvas.addEventListener('mousedown', startDrawing);
+                canvas.addEventListener('touchstart', startDrawingTouch);
+                canvas.addEventListener('mousemove', draw);
+                canvas.addEventListener('touchmove', drawTouch);
+                canvas.addEventListener('mouseup', stopDrawing);
+                canvas.addEventListener('touchend', stopDrawing);
+                canvas.addEventListener('mouseout', stopDrawing);
+
+                // Bouton d'effacement
+                clearButton.addEventListener('click', clearCanvas);
+
+                // Effacer le canvas initialement
+                clearCanvas();
+
+                // Message informatif pour l'utilisateur
+                console.log("Canvas de dessin configuré avec dimensions:", canvas.width, "x", canvas.height);
+            },
+
+            // Configurer la section d'ordre des traits
+            setupStrokeOrderSection() {
+                const characterSelector = document.getElementById('stroke-character-selector');
+                const animateButton = document.getElementById('animate-stroke-btn');
+                const strokeDisplay = document.getElementById('stroke-display');
+                const basicStrokesContainer = document.getElementById('basic-strokes-container');
+                let writer = null;
+
+                // Remplir le sélecteur de caractères
+                const loadCharactersForStrokeOrder = async () => {
+                    try {
+                        const response = await ChineseAPI.getCharactersByLevel("ALL", 0, 50);
+                        const characters = response.data;
+
+                        // Vider le sélecteur d'abord
+                        characterSelector.innerHTML = '';
+
+                        characters.forEach(char => {
+                            const option = document.createElement('option');
+                            option.value = char.character;
+                            option.textContent = `${char.character} (${char.pinyin} - ${char.strokes || '?'} traits)`;
+                            characterSelector.appendChild(option);
+                        });
+
+                        // Initialiser avec le premier caractère
+                        if (characters.length > 0) {
+                            animateStrokeOrder(characters[0].character);
+                        }
+                    } catch (error) {
+                        console.error("Error loading characters for stroke order:", error);
+                        characterSelector.innerHTML = '<option value="">Erreur de chargement</option>';
+                    }
+                };
+
+                // Animer l'ordre des traits d'un caractère
+                const animateStrokeOrder = async (character) => {
+                    // Nettoyer l'affichage précédent
+                    strokeDisplay.innerHTML = '';
+
+                    try {
+                        // Dans une vraie implémentation, nous pourrions chercher des données d'ordre de traits à partir d'une API
+                        const response = await ChineseAPI.getStrokeOrderData(character);
+
+                        // Créer un nouvel animateur
+                        writer = HanziWriter.create('stroke-display', character, {
+                            width: 300,
+                            height: 300,
+                            padding: 5,
+                            strokeColor: '#333',
+                            delayBetweenStrokes: 300
+                        });
+
+                        writer.animateCharacter();
+                    } catch (error) {
+                        console.error("Error animating stroke order:", error);
+                        strokeDisplay.innerHTML = `
+                            <div style="display: flex; justify-content: center; align-items: center; height: 100%;">
+                                <p>Erreur d'animation. Caractère: ${character}</p>
+                            </div>
+                        `;
+                    }
+                };
+
+                // Ajouter les traits de base
+                const addBasicStrokes = () => {
+                    const basicStrokes = HanziDB.getBasicStrokes();
+
+                    basicStrokesContainer.innerHTML = ''; // Vider d'abord
+
+                    basicStrokes.forEach(stroke => {
+                        const strokeItem = document.createElement('div');
+                        strokeItem.className = 'card';
+                        strokeItem.style.padding = '1rem';
+                        strokeItem.style.textAlign = 'center';
+
+                        strokeItem.innerHTML = `
+                            <div style="font-size: 2rem; margin-bottom: 0.5rem;">${stroke.example}</div>
+                            <div style="font-weight: 600;">${stroke.name} (${stroke.pinyin})</div>
+                            <div style="font-size: 0.9rem; color: #666;">${stroke.description}</div>
+                        `;
+
+                        basicStrokesContainer.appendChild(strokeItem);
+                    });
+                };
+
+                // Événement pour le bouton d'animation
+                animateButton.addEventListener('click', () => {
+                    const character = characterSelector.value;
+
+                    if (character) {
+                        animateStrokeOrder(character);
+                    }
+                });
+
+                // Initialiser la section
+                loadCharactersForStrokeOrder();
+                addBasicStrokes();
+            },
+
+            // Configurer la section dictionnaire
+            setupDictionarySection() {
+                const searchInput = document.getElementById('dictionary-search');
+                const searchButton = document.getElementById('dictionary-search-btn');
+                const resultsContainer = document.getElementById('search-results');
+                const resultsGrid = document.getElementById('dictionary-results');
+                const radicalsContainer = document.getElementById('radicals-container');
+
+                // Message d'information sur l'API
+                const apiInfoMsg = document.createElement('div');
+                apiInfoMsg.className = 'card';
+                apiInfoMsg.style.marginBottom = '1rem';
+                apiInfoMsg.innerHTML = `
+                    <h4>Nouvelle API intégrée!</h4>
+                    <p>Cette application utilise maintenant l'API HanziBase pour récupérer des informations détaillées sur les caractères chinois.</p>
+                    <p>Vous pouvez rechercher par caractère, pinyin, ou par traduction.</p>
+                `;
+
+                // Insérer le message avant le formulaire de recherche
+                document.querySelector('.search-container').parentNode.insertBefore(apiInfoMsg, document.querySelector('.search-container'));
+
+                // Ajouter les radicaux
+                const addRadicals = () => {
+                    const radicals = HanziDB.getRadicals();
+
+                    radicalsContainer.innerHTML = ''; // Vider d'abord
+
+                    radicals.forEach(radical => {
+                        const radicalItem = document.createElement('div');
+                        radicalItem.className = 'card';
+
+                        radicalItem.innerHTML = `
+                            <div style="font-size: 2rem; text-align: center; margin-bottom: 1rem;">${radical.radical}</div>
+                            <p><strong>Signification:</strong> ${radical.meaning}</p>
+                            <p><strong>Exemples:</strong> ${radical.examples.join(', ')}</p>
+                        `;
+
+                        // Ajouter la possibilité de rechercher des caractères par radical
+                        radicalItem.style.cursor = 'pointer';
+                        radicalItem.addEventListener('click', () => {
+                            searchInput.value = radical.radical;
+                            performSearch();
+                        });
+
+                        radicalsContainer.appendChild(radicalItem);
+                    });
+                };
+
+                // Fonction de recherche adaptée pour HanziBase
+                const performSearch = async () => {
+                    const query = searchInput.value.trim();
+
+                    if (query) {
+                        // Afficher l'indicateur de chargement
+                        resultsContainer.style.display = 'block';
+                        resultsGrid.innerHTML = `
+                            <div class="loading-container">
+                                <div class="loading-spinner"></div>
+                                <p>Recherche en cours...</p>
+                            </div>
+                        `;
+
+                        try {
+                            // Appel API pour la recherche
+                            const response = await ChineseAPI.searchCharacter(query);
+                            const results = response.data;
+
+                            // Effacer l'indicateur de chargement
+                            resultsGrid.innerHTML = '';
+
+                            if (results.length > 0) {
+                                results.forEach(char => {
+                                    const charCard = document.createElement('div');
+                                    charCard.className = 'card character-card';
+
+                                    // Format enrichi avec informations HanziBase
+                                    charCard.innerHTML = `
+                                        <div class="character">${char.character}</div>
+                                        <div class="pronunciation">${char.pinyin}</div>
+                                        <div class="meaning">${char.meaning}</div>
+                                        <div style="font-size: 0.8rem; margin-top: 0.5rem;">
+                                            <span title="Nombre de traits">Traits: ${char.strokes || '?'}</span> | 
+                                            <span title="Radical">Rad: ${char.radical || '?'}</span>
+                                        </div>
+                                    `;
+
+                                    charCard.addEventListener('click', () => {
+                                        UI.showCharacterModal(char);
+                                    });
+
+                                    resultsGrid.appendChild(charCard);
+                                });
+                            } else {
+                                resultsGrid.innerHTML = `
+                                    <div class="card">
+                                        <p>Aucun résultat trouvé pour "${query}".</p>
+                                        <p>Essayez un autre terme ou caractère.</p>
+                                    </div>
+                                `;
+                            }
+                        } catch (error) {
+                            console.error("Error searching:", error);
+                            resultsGrid.innerHTML = `
+                                <div class="card">
+                                    <p>Erreur lors de la recherche. Veuillez réessayer.</p>
+                                    <p>Détail: ${error.message}</p>
+                                </div>
+                            `;
+                        }
+                    }
+                };
+
+                // Événements pour la recherche
+                searchButton.addEventListener('click', performSearch);
+                searchInput.addEventListener('keyup', (e) => {
+                    if (e.key === 'Enter') {
+                        performSearch();
+                    }
+                });
+
+                // Initialiser les radicaux
+                addRadicals();
+            },
+
+            // Configurer la section des défis
+            setupChallengesSection() {
+                const updateChallenges = () => {
+                    const user = UserProfile.getState();
+                    const challengesContainer = document.getElementById('daily-challenges-container');
+                    const leaderboardContainer = document.getElementById('leaderboard-container');
+
+                    // Mettre à jour les défis
+                    challengesContainer.innerHTML = '';
+
+                    user.dailyChallenges.forEach(challenge => {
+                        const challengeItem = document.createElement('div');
+                        challengeItem.className = 'daily-challenge';
+
+                        challengeItem.innerHTML = `
+                            <div class="daily-challenge-title">
+                                <h3>${challenge.name}</h3>
+                                <span>${challenge.progress}/${challenge.total}</span>
+                            </div>
+                            
+                            <p>Récompense: ${challenge.reward} XP</p>
+                            
+                            <div class="daily-challenge-progress">
+                                <span>Progrès:</span>
+                                <div class="progress-bar">
+                                    <div class="progress-value" style="width: ${(challenge.progress / challenge.total) * 100}%"></div>
+                                </div>
+                                
+                                ${challenge.completed ?
+                                '<button class="btn" disabled>Complété</button>' :
+                                `<button class="btn" ${challenge.progress === 0 ? 'disabled' : ''}>Continuer</button>`
+                            }
+                            </div>
+                        `;
+
+                        // Ajouter un écouteur d'événement aux boutons
+                        const button = challengeItem.querySelector('button');
+                        if (!challenge.completed) {
+                            button.addEventListener('click', () => {
+                                // Naviguer vers la section appropriée
+                                switch (challenge.id) {
+                                    case 1:
+                                        this.navigateTo('learn');
+                                        break;
+                                    case 2:
+                                        this.navigateTo('practice');
+                                        break;
+                                    case 3:
+                                        this.navigateTo('practice');
+                                        document.querySelector('[data-tab="writing"]').click();
+                                        break;
+                                }
+                            });
+                        }
+
+                        challengesContainer.appendChild(challengeItem);
+                    });
+
+                    // Données fictives de classement
+                    const leaderboard = [
+                        { rank: 1, name: "LinaM", avatar: "L", points: 2450 },
+                        { rank: 2, name: "Thomas92", avatar: "T", points: 2240 },
+                        { rank: 3, name: "ChinesePro", avatar: "C", points: 1980 },
+                        { rank: 4, name: "Utilisateur", avatar: "U", points: user.level * 100 + user.xp, isCurrent: true },
+                        { rank: 5, name: "LearningFast", avatar: "L", points: 1750 },
+                        { rank: 6, name: "DragonMaster", avatar: "D", points: 1620 },
+                        { rank: 7, name: "Mandarin2023", avatar: "M", points: 1540 }
+                    ].sort((a, b) => b.points - a.points).map((user, index) => ({
+                        ...user,
+                        rank: index + 1
+                    }));
+
+                    // Mettre à jour le classement
+                    leaderboardContainer.innerHTML = '';
+
+                    leaderboard.forEach(user => {
+                        const leaderboardItem = document.createElement('div');
+                        leaderboardItem.className = `leaderboard-item ${user.isCurrent ? 'current' : ''}`;
+
+                        if (user.isCurrent) {
+                            leaderboardItem.style.backgroundColor = 'rgba(230, 57, 70, 0.1)';
+                        }
+
+                        leaderboardItem.innerHTML = `
+                            <div class="leaderboard-rank">${user.rank}</div>
+                            <div class="leaderboard-user">
+                                <div class="leaderboard-avatar">${user.avatar}</div>
+                                <div>${user.name}</div>
+                            </div>
+                            <div class="leaderboard-points">${user.points} XP</div>
+                        `;
+
+                        leaderboardContainer.appendChild(leaderboardItem);
+                    });
+                };
+
+                // Initialiser
+                updateChallenges();
+            },
+
+            // Configurer la section des réussites
+            setupAchievementsSection() {
+                const updateAchievements = () => {
+                    const user = UserProfile.getState();
+                    const badgesContainer = document.getElementById('badges-container');
+                    const achievementsHistory = document.getElementById('achievements-history');
+
+                    // Mettre à jour les badges
+                    badgesContainer.innerHTML = '';
+
+                    user.badges.forEach(badge => {
+                        const badgeItem = document.createElement('div');
+                        badgeItem.className = `badge ${!badge.unlocked ? 'badge-locked' : ''}`;
+
+                        badgeItem.innerHTML = `
+                            <div class="badge-icon">${badge.icon}</div>
+                            <div class="badge-name">${badge.name}</div>
+                            <div class="badge-desc">${badge.description}</div>
+                        `;
+
+                        badgesContainer.appendChild(badgeItem);
+                    });
+
+                    // Mettre à jour l'historique des réussites
+                    achievementsHistory.innerHTML = '';
+
+                    if (user.achievements.length > 0) {
+                        const achievementsList = document.createElement('ul');
+                        achievementsList.style.paddingLeft = '1.5rem';
+
+                        user.achievements.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(achievement => {
+                            const achievementItem = document.createElement('li');
+                            const date = new Date(achievement.date);
+
+                            achievementItem.innerHTML = `
+                                <strong>${achievement.description}</strong>
+                                <div style="font-size: 0.9rem; color: #666;">${date.toLocaleDateString()}</div>
+                            `;
+
+                            achievementsList.appendChild(achievementItem);
+                        });
+
+                        achievementsHistory.appendChild(achievementsList);
+                    } else {
+                        achievementsHistory.innerHTML = '<p>Aucune réussite pour le moment. Continuez à apprendre !</p>';
+                    }
+                };
+
+                // Initialiser
+                updateAchievements();
+            },
+
+            // Configurer les modales
+            setupModals() {
+                const modal = document.getElementById('character-modal');
+                const closeBtn = modal.querySelector('.modal-close');
+
+                closeBtn.addEventListener('click', () => {
+                    modal.classList.remove('active');
+                });
+
+                // Fermer la modale en cliquant à l'extérieur
+                window.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        modal.classList.remove('active');
+                    }
+                });
+            },
+
+            // Afficher la modale de caractère
+            showCharacterModal(character) {
+                const modal = document.getElementById('character-modal');
+                const modalBody = document.getElementById('modal-body');
+
+                // Afficher un état de chargement
+                modalBody.innerHTML = `
+                    <div class="loading-container">
+                        <div class="loading-spinner"></div>
+                        <p>Chargement des détails depuis HanziBase...</p>
+                    </div>
+                `;
+
+                // Afficher la modale
+                modal.classList.add('active');
+
+                // Obtenir des détails supplémentaires et afficher
+                ChineseAPI.getCharacterDetails(character.character).then(response => {
+                    const details = response.data || character;
+
+                    // Récupérer les informations spécifiques à HanziBase
+                    const strokeCount = details.strokes || '?';
+                    const radical = details.radical || '?';
+                    const freq = details.freq ? `${details.freq} (${details.freq <= 2 ? 'Très fréquent' : (details.freq <= 4 ? 'Commun' : 'Moins commun')})` : '?';
+
+                    modalBody.innerHTML = `
+                        <div class="character-detail">
+                            <div class="character-info">
+                                <h3>${details.character} ${details.traditional !== details.character ? `(${details.traditional})` : ''}</h3>
+                                <div style="display: flex; justify-content: space-between; flex-wrap: wrap; margin-bottom: 1rem;">
+                                    <div style="flex: 1; min-width: 150px;">
+                                        <p><strong>Pinyin:</strong> ${details.pinyin}</p>
+                                        <p><strong>Signification:</strong> ${details.meaning}</p>
+                                        <p><strong>Niveau HSK:</strong> ${details.level}</p>
+                                    </div>
+                                    <div style="flex: 1; min-width: 150px;">
+                                        <p><strong>Traits:</strong> ${strokeCount}</p>
+                                        <p><strong>Radical:</strong> ${radical}</p>
+                                        <p><strong>Fréquence:</strong> ${freq}</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="character-example">
+                                    <h4>Exemples:</h4>
+                                    <ul>
+                                        ${details.examples.map(ex => `<li class="character-example-item">${ex}</li>`).join('')}
+                                    </ul>
+                                </div>
+                                
+                                ${details.etymology ? `
+                                    <div class="character-example">
+                                        <h4>Étymologie:</h4>
+                                        <p>${details.etymology}</p>
+                                    </div>
+                                ` : ''}
+                                
+                                ${details.components && details.components.length > 0 ? `
+                                    <div class="character-example">
+                                        <h4>Composants:</h4>
+                                        <ul>
+                                            ${details.components.map(comp => `<li>${comp.component} - ${comp.meaning}</li>`).join('')}
+                                        </ul>
+                                    </div>
+                                ` : ''}
+                            </div>
+                            <div class="character-writer" id="modal-character-writer">
+                                <!-- Animateur de caractère inséré ici -->
+                            </div>
+                        </div>
+                        <div style="margin-top: 1.5rem; text-align: right;">
+                            <button class="btn" id="learn-in-modal-btn">Marquer comme appris</button>
+                        </div>
+                    `;
+
+                    // Initialiser l'animation du caractère
+                    try {
+                        const writer = HanziWriter.create('modal-character-writer', details.character, {
+                            width: 200,
+                            height: 200,
+                            padding: 5,
+                            strokeColor: '#333',
+                            delayBetweenStrokes: 300
+                        });
+
+                        writer.animateCharacter();
+                    } catch (err) {
+                        console.error('Error initializing character writer in modal:', err);
+                        document.getElementById('modal-character-writer').innerHTML = `
+                            <div class="character" style="font-size: 4rem; text-align: center;">${details.character}</div>
+                        `;
+                    }
+
+                    // Ajouter un écouteur d'événement au bouton d'apprentissage
+                    const learnButton = document.getElementById('learn-in-modal-btn');
+                    const userState = UserProfile.getState();
+                    const isCharacterLearned = userState.learnedCharacters.includes(details.id);
+
+                    if (isCharacterLearned) {
+                        learnButton.textContent = 'Déjà appris';
+                        learnButton.disabled = true;
+                    } else {
+                        learnButton.addEventListener('click', () => {
+                            UserProfile.learnCharacter(details.id);
+                            learnButton.textContent = 'Déjà appris';
+                            learnButton.disabled = true;
+                            this.updateUserProfile();
+                            this.updateStats();
+                        });
+                    }
+                }).catch(error => {
+                    console.error("Error fetching character details for modal:", error);
+                    modalBody.innerHTML = `
+                        <div class="card">
+                            <p>Erreur lors du chargement des détails du caractère. Veuillez réessayer.</p>
+                        </div>
+                    `;
+                });
+            },
+
+            // Afficher une notification de réussite
+            showAchievement(title, description, icon) {
+                const popup = document.createElement('div');
+                popup.className = 'achievement-popup';
+                popup.innerHTML = `
+                    <div class="achievement-icon">${icon}</div>
+                    <div class="achievement-content">
+                        <h4>${title}</h4>
+                        <p>${description}</p>
+                    </div>
+                `;
+
+                document.body.appendChild(popup);
+
+                // Supprimer après animation
+                setTimeout(() => {
+                    popup.remove();
+                }, 5000);
+            },
+
+            // Déclencher l'animation de confetti
+            triggerConfetti() {
+                // Créer le canvas pour les confettis
+                if (!document.getElementById('confetti-canvas')) {
+                    const canvas = document.createElement('canvas');
+                    canvas.id = 'confetti-canvas';
+                    canvas.style.position = 'fixed';
+                    canvas.style.top = '0';
+                    canvas.style.left = '0';
+                    canvas.style.width = '100%';
+                    canvas.style.height = '100%';
+                    canvas.style.pointerEvents = 'none';
+                    canvas.style.zIndex = '1000';
+                    document.body.appendChild(canvas);
+
+                    const confettiSettings = {
+                        target: 'confetti-canvas',
+                        max: 200,
+                        size: 1.5,
+                        animate: true,
+                        props: ['circle', 'square', 'triangle', 'line'],
+                        colors: [[165, 104, 246], [230, 61, 135], [0, 199, 228], [253, 214, 126]],
+                        clock: 25
+                    };
+
+                    const confetti = new ConfettiGenerator(confettiSettings);
+                    confetti.render();
+
+                    // Supprimer les confettis après quelques secondes
+                    setTimeout(() => {
+                        confetti.clear();
+                        const canvas = document.getElementById('confetti-canvas');
+                        if (canvas) {
+                            canvas.remove();
+                        }
+                    }, 5000);
+                }
+            }
+        };
+
+        // ===================================
+        // SCRIPT D'INTÉGRATION
+        // ===================================
+
+        // Fonction de navigation globale
+        function navigateTo(sectionId) {
+            UI.navigateTo(sectionId);
+        }
+
+        // Fonction pour filtrer les résultats par radical
+        function filterByRadical(radical) {
+            // Naviguer vers la section dictionnaire
+            navigateTo('dictionary');
+
+            // Remplir le champ de recherche avec le radical
+            const searchInput = document.getElementById('dictionary-search');
+            if (searchInput) {
+                searchInput.value = radical;
+
+                // Simuler un clic sur le bouton de recherche
+                const searchButton = document.getElementById('dictionary-search-btn');
+                if (searchButton) {
+                    searchButton.click();
+                }
+            }
+        }
+
+        // Initialiser l'application lorsque le DOM est chargé
+        document.addEventListener('DOMContentLoaded', function () {
+            // Ajouter une notification pour informer l'utilisateur de la nouvelle API
+            function showApiNotification() {
+                const notification = document.createElement('div');
+                notification.style.position = 'fixed';
+                notification.style.bottom = '20px';
+                notification.style.left = '20px';
+                notification.style.padding = '15px';
+                notification.style.backgroundColor = '#457b9d'; // Couleur secondaire de l'application
+                notification.style.color = 'white';
+                notification.style.borderRadius = '8px';
+                notification.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.2)';
+                notification.style.zIndex = '1000';
+                notification.style.maxWidth = '300px';
+                notification.style.animation = 'slideIn 0.5s ease';
+
+                notification.innerHTML = `
+                    <h4 style="margin: 0 0 10px 0;">Nouvelle API intégrée!</h4>
+                    <p style="margin: 0;">RapidMandarin utilise maintenant HanziBase pour des informations plus complètes sur les caractères chinois.</p>
+                    <button style="background: white; color: #457b9d; border: none; margin-top: 10px; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Fermer</button>
+                `;
+
+                // Ajouter le style d'animation
+                const style = document.createElement('style');
+                style.textContent = `
+                    @keyframes slideIn {
+                        from { transform: translateX(-120%); }
+                        to { transform: translateX(0); }
+                    }
+                `;
+                document.head.appendChild(style);
+
+                // Ajouter au document
+                document.body.appendChild(notification);
+
+                // Gérer le bouton de fermeture
+                const closeButton = notification.querySelector('button');
+                closeButton.addEventListener('click', () => {
+                    notification.style.animation = 'slideOut 0.5s ease forwards';
+
+                    // Ajouter le style d'animation pour la sortie
+                    const outStyle = document.createElement('style');
+                    outStyle.textContent = `
+                        @keyframes slideOut {
+                            from { transform: translateX(0); }
+                            to { transform: translateX(-120%); }
+                        }
+                    `;
+                    document.head.appendChild(outStyle);
+
+                    // Supprimer après animation
+                    setTimeout(() => {
+                        notification.remove();
+                    }, 500);
+                });
+
+                // Auto-fermeture après 10 secondes
+                setTimeout(() => {
+                    if (document.body.contains(notification)) {
+                        closeButton.click();
+                    }
+                }, 10000);
+            }
+
+            // Tester la connexion API et initialiser l'application
+            async function testApiConnection() {
+                try {
+                    // Test simple pour vérifier si l'API est accessible
+                    const response = await fetch('https://api.hanzibase.net/character/filter/id/idc/idc/idc?page=1');
+
+                    if (!response.ok) {
+                        throw new Error(`API responded with status ${response.status}`);
+                    }
+
+                    // Si nous arrivons ici, l'API fonctionne
+                    console.log('HanziBase API connection successful!');
+                    showApiNotification();
+
+                    return true;
+                } catch (error) {
+                    console.error("Error connecting to HanziBase API:", error);
+
+                    // Afficher une notification d'erreur
+                    const notification = document.createElement('div');
+                    notification.style.position = 'fixed';
+                    notification.style.top = '20px';
+                    notification.style.right = '20px';
+                    notification.style.padding = '15px';
+                    notification.style.backgroundColor = '#e63946'; // Couleur d'erreur
+                    notification.style.color = 'white';
+                    notification.style.borderRadius = '8px';
+                    notification.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.2)';
+                    notification.style.zIndex = '1000';
+                    notification.style.maxWidth = '300px';
+
+                    notification.innerHTML = `
+                        <h4 style="margin: 0 0 10px 0;">Erreur de connexion API</h4>
+                        <p style="margin: 0;">Impossible de se connecter à HanziBase. Utilisation des données locales.</p>
+                        <button style="background: white; color: #e63946; border: none; margin-top: 10px; padding: 5px 10px; border-radius: 4px; cursor: pointer;">OK</button>
+                    `;
+
+                    document.body.appendChild(notification);
+
+                    // Gérer le bouton de fermeture
+                    const closeButton = notification.querySelector('button');
+                    closeButton.addEventListener('click', () => {
+                        notification.remove();
+                    });
+
+                    // Auto-fermeture après 5 secondes
+                    setTimeout(() => {
+                        if (document.body.contains(notification)) {
+                            notification.remove();
+                        }
+                    }, 5000);
+
+                    return false;
+                }
+            }
+
+            // Initialiser le test de connexion API et démarrer l'application
+            testApiConnection().then(apiAvailable => {
+                // Initialiser l'interface utilisateur
+                UI.init();
+            });
+        });
+    </script>
+</body>
+
+</html>
