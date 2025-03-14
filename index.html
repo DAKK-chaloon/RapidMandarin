@@ -1045,6 +1045,8 @@
                     // Limiter les résultats en fonction de l'offset et de la limite
                     const paginatedCharacters = characters.slice(offset, offset + limit);
 
+                    console.log(paginatedCharacters);
+
                     return {
                         success: true,
                         data: paginatedCharacters,
@@ -1061,52 +1063,18 @@
                 }
             },
 
-            // Mapper l'objet caractère API vers notre format interne
-            mapApiCharacterToInternal(apiChar) {
-                // Vérifier si l'objet existe et a les propriétés nécessaires
-                if (!apiChar) {
-                    console.warn("Invalid character object received from API");
-                    return {
-                        id: Math.floor(Math.random() * 10000),  // ID fictif pour éviter les erreurs
-                        character: "?",
-                        traditional: "?",
-                        pinyin: "?",
-                        meaning: "Caractère inconnu",
-                        level: "HSK1",
-                        examples: ["Exemple non disponible"],
-                        strokes: 0,
-                        radical: "?",
-                        freq: 5
-                    };
-                }
-
-                // Extraire les propriétés avec sécurité (en utilisant l'opérateur ?. pour éviter les erreurs)
-                const char = apiChar.char || apiChar.simp_char || "?";
-                const trad = apiChar.trad_char || char;
-                const id = apiChar.id || Math.floor(Math.random() * 10000);
-                const pinyin = apiChar.pinyin || "?";
-                const meaning = apiChar.translations || apiChar.meaning || "?";
-                const strokes = apiChar.stroke_count || apiChar.strokes || 0;
-                const radical = apiChar.radical || apiChar.simp_radical || "?";
-                const freq = apiChar.freq || 5;
-
-                // Générer le niveau HSK à partir de la fréquence
-                const level = `HSK${this.getHSKLevelFromFreq(freq)}`;
-
-                // Générer des exemples
-                const examples = this.generateExamples(char, meaning);
-
+            mapLocalCharacterToInternal(char) {
                 return {
-                    id,
-                    character: char,
-                    traditional: trad,
-                    pinyin,
-                    meaning,
-                    level,
-                    examples,
-                    strokes,
-                    radical,
-                    freq
+                    char: char.char,
+                    pinyin: char.pinyin || '',
+                    pinyin_normalised: char.pinyin_normalised || '',
+                    meaningfr: char.meaningfr || '',
+                    meaningen: char.meaningen || '',
+                    freq: char.freq || 5,
+                    trad_char: char.trad_char,
+                    hsk: this.getHSKLevelFromFreq(char.freq || 5),
+                    radical: char.radical,
+                    stroke_count: char.stroke_count
                 };
             },
 
@@ -1135,59 +1103,41 @@
                     if (!query) return { success: true, data: [], message: "Query is empty" };
 
                     console.log(`Searching for: ${query}`);
+                    // Vérifier si les données JSON sont chargées, sinon les charger
+                    if (!this.hanziData || this.hanziData.length === 0) {
+                        console.log("Chargement du fichier JSON...");
+                        const response = await fetch("./rapidmandarin.hanzis.json");
 
-                    // Faire l'appel API
-                    const response = await fetch(`${this.config.apiBaseUrl}/character/search/${encodeURIComponent(query)}/id/idc/idc/idc/no?page=0`);
-
-                    if (!response.ok) {
-                        throw new Error(`API responded with status ${response.status}`);
-                    }
-
-                    const responseData = await response.json();
-
-                    // Extraire le tableau de caractères de la réponse
-                    let characters = [];
-
-                    if (responseData && responseData.characters && Array.isArray(responseData.characters)) {
-                        // Format attendu: { characters: [...] }
-                        characters = responseData.characters;
-                    } else if (Array.isArray(responseData)) {
-                        // Format alternatif: directement un tableau
-                        characters = responseData;
-                    } else if (responseData && typeof responseData === 'object') {
-                        // Autre format: objet avec propriétés qui pourraient être des caractères
-                        // Essayer d'extraire les caractères potentiels
-                        for (const key in responseData) {
-                            if (responseData[key] && typeof responseData[key] === 'object' && responseData[key].char) {
-                                characters.push(responseData[key]);
-                            }
+                        if (!response.ok) {
+                            throw new Error(`Impossible de charger le fichier JSON (code ${response.status})`);
                         }
+
+                        this.hanziData = await response.json();
                     }
 
-                    // Si aucun caractère n'a été trouvé dans la réponse
-                    if (characters.length === 0) {
-                        console.warn("No characters found in API response, using fallback search");
-                        return {
-                            success: false,
-                            data: HanziDB.searchCharacter(query),
-                            message: "Aucun résultat trouvé dans l'API. Utilisation des données locales."
-                        };
-                    }
+                    // Recherche dans les données JSON locales
+                    const localResults = this.hanziData.filter(char =>
+                        char.char.includes(query) ||
+                        (char.pinyin && char.pinyin.toLowerCase().includes(query.toLowerCase())) ||
+                        (char.pinyin_normalised && char.pinyin_normalised.toLowerCase().includes(query.toLowerCase())) ||
+                        (char.meaningfr && char.meaningfr.toLowerCase().includes(query.toLowerCase()))||
+                        (char.meaningen && char.meaningen.toLowerCase().includes(query.toLowerCase()))
+                    );
 
-                    // Traiter les résultats de recherche
-                    const results = characters.map(char => this.mapApiCharacterToInternal(char));
-
+                    // Retourner les résultats avec le format interne
                     return {
-                        success: true,
-                        data: results,
-                        message: "Search completed successfully"
+                        success: localResults.length > 0,
+                        data: localResults.map(char => this.mapLocalCharacterToInternal(char)),
+                        message: localResults.length > 0
+                            ? "Résultats trouvés dans les données locales"
+                            : "Aucun résultat trouvé"
                     };
                 } catch (error) {
-                    console.error("Error searching characters:", error);
+                    console.error("Erreur de recherche de caractères:", error);
                     return {
                         success: false,
-                        data: HanziDB.searchCharacter(query),
-                        message: `Erreur: ${error.message}. Utilisation des données locales.`
+                        data: [],
+                        message: `Erreur: ${error.message}. Impossible de rechercher les caractères.`
                     };
                 }
             },
@@ -1222,11 +1172,11 @@
 
                     // Générer des scores de confiance
                     const results = randomChars.map(char => ({
-                        character: char.character,
+                        character: char.char,
                         score: Math.random() * 0.5 + 0.5, // Score entre 0.5 et 1.0
                         details: {
                             pinyin: char.pinyin,
-                            meaning: char.meaning
+                            meaningfr: char.meaningfr
                         }
                     })).sort((a, b) => b.score - a.score);
 
@@ -1248,7 +1198,7 @@
             // Méthode pour obtenir les détails d'un caractère
             async getCharacterDetails(character) {
                 try {
-                    console.log(`Getting details for character: ${character}`);
+                    console.log(`Getting details for characterrr: ${character}`);
 
                     // Rechercher le caractère
                     const searchResponse = await this.searchCharacter(character);
@@ -1257,20 +1207,22 @@
                         throw new Error(`Character "${character}" not found`);
                     }
 
+                    console.log(searchResponse);
                     // Obtenir le premier caractère correspondant
-                    const char = searchResponse.data.find(c => c.character === character) || searchResponse.data[0];
+                    const char = searchResponse.data.find(c => c.char === character) || searchResponse.data[0];
+                    console.log(char)
 
                     // Ajouter des données supplémentaires (puisque l'API ne fournit pas certains détails)
                     const details = {
                         ...char,
                         etymology: "Information étymologique sur l'origine du caractère",
                         components: [
-                            { component: char.radical, meaning: "radical principal" }
+                            { component: char.radical, meaningfr: "radical principal" }
                         ],
-                        commonWords: [
-                            { word: `${character}好`, pinyin: "nǐhǎo", meaning: "bonjour" },
-                            { word: `${character}们`, pinyin: "nǐmen", meaning: "vous (pluriel)" }
-                        ]
+                        // commonWords: [
+                        //     { word: `${char}好`, pinyin: "nǐhǎo", meaning: "bonjour" },
+                        //     { word: `${char}们`, pinyin: "nǐmen", meaning: "vous (pluriel)" }
+                        // ]
                     };
 
                     return {
@@ -1301,7 +1253,7 @@
                     let strokeCount = 5; // Valeur par défaut
 
                     if (charInfo.success && charInfo.data.length > 0) {
-                        const char = charInfo.data.find(c => c.character === character) || charInfo.data[0];
+                        const char = charInfo.data.find(c => c.char === character) || charInfo.data[0];
                         strokeCount = char.strokes || 5;
                     }
 
@@ -1369,14 +1321,18 @@
 
             // Rechercher un caractère par requête
             searchCharacter(query) {
+                console.log("searchCharacter" + query);
                 if (!query) return [];
 
                 // Recherche plus sophistiquée
                 return this.database.filter(char =>
-                    char.character.includes(query) ||
-                    char.traditional.includes(query) ||
+                    char.char.includes(query) ||
+                    char.trad_char.includes(query) ||
                     char.pinyin.toLowerCase().includes(query.toLowerCase()) ||
-                    char.meaning.toLowerCase().includes(query.toLowerCase())
+                    char.pinyin_normalised.toLowerCase().includes(query.toLowerCase()) ||
+                    char.meaningfr.toLowerCase().includes(query.toLowerCase())||
+                    char.meaningen.toLowerCase().includes(query.toLowerCase())
+                    
                 );
             },
 
@@ -1411,9 +1367,11 @@
 
             // Générer un quiz
             generateQuiz(level, count = 5) {
-                const characters = this.getCharactersByLevel(level);
+                const characters = this.getCharactersByLevel(level, 0, 30000);
                 const questions = [];
                 const usedIds = new Set();
+
+                console.log(characters);
 
                 while (questions.length < count && questions.length < characters.length) {
                     // Choisir un caractère aléatoire
@@ -1429,7 +1387,7 @@
 
                     // Créer des options pour le quiz
                     const options = [
-                        { id: 1, text: character.meaning, correct: true }
+                        { id: 1, text: character.meaningfr, correct: true }
                     ];
 
                     // Ajouter des options incorrectes
@@ -1438,7 +1396,7 @@
                         const wrongIndex = (randomIndex + optionCount) % characters.length;
                         const wrongOption = {
                             id: optionCount,
-                            text: characters[wrongIndex].meaning,
+                            text: characters[wrongIndex].meaningfr,
                             correct: false
                         };
 
@@ -1453,14 +1411,15 @@
                     // Mélanger les options
                     const shuffledOptions = [...options].sort(() => Math.random() - 0.5);
 
+                    console.log(character);
+                    
                     questions.push({
                         id: questions.length + 1,
-                        character: character.character,
+                        character: character.char,
                         pinyin: character.pinyin,
-                        traditional: character.traditional,
-                        meaning: character.meaning,
-                        options: shuffledOptions,
-                        examples: character.examples || []
+                        trad_char: character.trad_char,
+                        meaningfr: character.meaningfr,
+                        options: shuffledOptions
                     });
                 }
 
@@ -2027,11 +1986,11 @@
 
                                 // Mise à jour pour inclure les nouvelles informations disponibles
                                 charCard.innerHTML = `
-                        <div class="character">${char.character}</div>
+                        <div class="character">${char.char}</div>
                         <div class="pronunciation">${char.pinyin}</div>
-                        <div class="meaning">${char.meaning}</div>
+                        <div class="meaning">${char.meaningfr.toLowerCase()}</div>
                         <div style="font-size: 0.8rem; margin-top: 0.5rem;">
-                            <span title="Nombre de traits">Traits: ${char.strokes || '?'}</span> | 
+                            <span title="Nombre de traits">Traits: ${char.stroke_count || '?'}</span> | 
                             <span title="Radical">Rad: ${char.radical || '?'}</span>
                         </div>
                         ${isLearned ? '<div style="position: absolute; top: 10px; right: 10px; color: green;">✓</div>' : ''}
@@ -2085,33 +2044,26 @@
 
                     try {
                         // Appel API pour obtenir plus de détails
-                        const response = await ChineseAPI.getCharacterDetails(character.character);
+                        const response = await ChineseAPI.getCharacterDetails(character.char);
                         const details = response.data || character;
-
                         // Récupérer les informations spécifiques à HanziBase
-                        const strokeCount = details.strokes || '?';
+                        const strokeCount = details.stroke_count || '?';
                         const radical = details.radical || '?';
-                        const tradChar = details.traditional !== details.character ?
-                            details.traditional : 'Identique au simplifié';
+                        const tradChar = details.trad_char !== details.char ?
+                            details.trad_char : 'Identique au simplifié';
 
+                            
                         // Mettre à jour le conteneur de détails avec les nouvelles informations
                         characterDetail.innerHTML = `
                 <div class="character-detail">
                     <div class="character-info">
-                        <h3>${details.character} ${details.traditional !== details.character ? `(${details.traditional})` : ''}</h3>
+                        <h3>${details.char} ${details.trad_char !== details.char ? `(${details.trad_char})` : ''}</h3>
                         <p><strong>Pinyin:</strong> ${details.pinyin}</p>
-                        <p><strong>Signification:</strong> ${details.meaning}</p>
+                        <p><strong>Signification:</strong> ${details.meaningfr}</p>
                         <p><strong>Forme traditionnelle:</strong> ${tradChar}</p>
-                        <p><strong>Niveau HSK:</strong> ${details.level}</p>
+                        <p><strong>Niveau HSK:</strong> ${details.hsk}</p>
                         <p><strong>Nombre de traits:</strong> ${strokeCount}</p>
                         <p><strong>Radical:</strong> ${radical}</p>
-                        
-                        <div class="character-example">
-                            <h4>Exemples:</h4>
-                            <ul>
-                                ${details.examples.map(ex => `<li class="character-example-item">${ex}</li>`).join('')}
-                            </ul>
-                        </div>
                         
                         ${details.etymology ? `
                             <div class="character-example">
@@ -2124,7 +2076,7 @@
                             <div class="character-example">
                                 <h4>Composants:</h4>
                                 <ul>
-                                    ${details.components.map(comp => `<li>${comp.component} - ${comp.meaning}</li>`).join('')}
+                                    ${details.components.map(comp => `<li>${comp.component} - ${comp.meaningfr}</li>`).join('')}
                                 </ul>
                             </div>
                         ` : ''}
@@ -2209,7 +2161,7 @@
                         const cards = charactersGrid.querySelectorAll('.character-card');
                         for (const card of cards) {
                             const cardChar = card.querySelector('.character')?.textContent;
-                            if (cardChar === currentCharacter.character) {
+                            if (cardChar === currentCharacter.char) {
                                 card.classList.add('learned');
                                 const checkmark = document.createElement('div');
                                 checkmark.style.position = 'absolute';
@@ -2283,8 +2235,10 @@
 
                     try {
                         // Générer un quiz basé sur les caractères du niveau sélectionné
-                        const characters = await ChineseAPI.getCharactersByLevel(level);
+                        const characters = await ChineseAPI.getCharactersByLevel(level, 0, 30000);
                         currentQuiz = HanziDB.generateQuiz(level, 5);
+
+                        console.log(currentQuiz)
 
                         // Si nous avons des données de l'API, utiliser celles-ci pour générer un quiz
                         if (characters.success && characters.data.length > 0) {
@@ -2301,7 +2255,7 @@
 
                                     // Créer des options pour le quiz
                                     const options = [
-                                        { id: 1, text: character.meaning, correct: true }
+                                        { id: 1, text: character.meaningfr, correct: true }
                                     ];
 
                                     // Ajouter des options incorrectes
@@ -2310,7 +2264,7 @@
                                         const wrongIndex = (randomIndex + optionCount) % characters.data.length;
                                         const wrongOption = {
                                             id: optionCount,
-                                            text: characters.data[wrongIndex].meaning,
+                                            text: characters.data[wrongIndex].meaningfr,
                                             correct: false
                                         };
 
@@ -2327,13 +2281,13 @@
 
                                     currentQuiz.push({
                                         id: currentQuiz.length + 1,
-                                        character: character.character,
+                                        char: character.char,
                                         pinyin: character.pinyin,
-                                        traditional: character.traditional,
-                                        meaning: character.meaning,
+                                        trad_char: character.trad_char,
+                                        meaningfr: character.meaningfr,
                                         options: shuffledOptions,
                                         examples: character.examples || [],
-                                        strokes: character.strokes,
+                                        stroke_count: character.stroke_count,
                                         radical: character.radical
                                     });
                                 }
@@ -2366,11 +2320,11 @@
                         </div>
                         
                         <div class="quiz-question">
-                            ${question.character} (${question.pinyin})
+                            ${question.char} (${question.pinyin})
                         </div>
                         
                         <div style="text-align: center; margin: 0.5rem 0; font-size: 0.9rem; color: #666;">
-                            ${question.strokes ? `Traits: ${question.strokes}` : ''} 
+                            ${question.stroke_count ? `Traits: ${question.stroke_count}` : ''} 
                             ${question.radical ? `| Radical: ${question.radical}` : ''}
                         </div>
                         
@@ -2421,9 +2375,9 @@
 
                     explanation.innerHTML = `
                         <h4 style="margin-bottom: 0.5rem;">Explication:</h4>
-                        <p>Le caractère <strong>${question.character}</strong> (<em>${question.pinyin}</em>) signifie <strong>"${question.meaning}"</strong>.</p>
+                        <p>Le caractère <strong>${question.char}</strong> (<em>${question.pinyin}</em>) signifie <strong>"${question.meaningfr}"</strong>.</p>
                         
-                        ${question.strokes ? `<p>Nombre de traits: <strong>${question.strokes}</strong></p>` : ''}
+                        ${question.stroke_count ? `<p>Nombre de traits: <strong>${question.stroke_count}</strong></p>` : ''}
                         ${question.radical ? `<p>Radical: <strong>${question.radical}</strong></p>` : ''}
                         
                         ${question.examples && question.examples.length > 0 ? `
@@ -2864,7 +2818,7 @@
                 apiInfoMsg.style.marginBottom = '1rem';
                 apiInfoMsg.innerHTML = `
                     <h4>Nouvelle API intégrée!</h4>
-                    <p>Cette application utilise maintenant l'API HanziBase pour récupérer des informations détaillées sur les caractères chinois.</p>
+                    <p>Cette application utilise maintenant un fichier local pour récupérer des informations détaillées sur les caractères chinois.</p>
                     <p>Vous pouvez rechercher par caractère, pinyin, ou par traduction.</p>
                 `;
 
@@ -2883,7 +2837,7 @@
 
                         radicalItem.innerHTML = `
                             <div style="font-size: 2rem; text-align: center; margin-bottom: 1rem;">${radical.radical}</div>
-                            <p><strong>Signification:</strong> ${radical.meaning}</p>
+                            <p><strong>Signification:</strong> ${radical.meaningfr}</p>
                             <p><strong>Exemples:</strong> ${radical.examples.join(', ')}</p>
                         `;
 
@@ -2927,11 +2881,11 @@
 
                                     // Format enrichi avec informations HanziBase
                                     charCard.innerHTML = `
-                                        <div class="character">${char.character}</div>
+                                        <div class="character">${char.char}</div>
                                         <div class="pronunciation">${char.pinyin}</div>
-                                        <div class="meaning">${char.meaning}</div>
+                                        <div class="meaning">${char.meaningfr}</div>
                                         <div style="font-size: 0.8rem; margin-top: 0.5rem;">
-                                            <span title="Nombre de traits">Traits: ${char.strokes || '?'}</span> | 
+                                            <span title="Nombre de traits">Traits: ${char.stroke_count || '?'}</span> | 
                                             <span title="Radical">Rad: ${char.radical || '?'}</span>
                                         </div>
                                     `;
@@ -3160,36 +3114,29 @@
                 modal.classList.add('active');
 
                 // Obtenir des détails supplémentaires et afficher
-                ChineseAPI.getCharacterDetails(character.character).then(response => {
+                ChineseAPI.getCharacterDetails(character.char).then(response => {
                     const details = response.data || character;
 
                     // Récupérer les informations spécifiques à HanziBase
-                    const strokeCount = details.strokes || '?';
+                    const strokeCount = details.stroke_count || '?';
                     const radical = details.radical || '?';
                     const freq = details.freq ? `${details.freq} (${details.freq <= 2 ? 'Très fréquent' : (details.freq <= 4 ? 'Commun' : 'Moins commun')})` : '?';
 
                     modalBody.innerHTML = `
                         <div class="character-detail">
                             <div class="character-info">
-                                <h3>${details.character} ${details.traditional !== details.character ? `(${details.traditional})` : ''}</h3>
+                                <h3>${details.char} ${details.trad_char !== details.char ? `(${details.trad_char})` : ''}</h3>
                                 <div style="display: flex; justify-content: space-between; flex-wrap: wrap; margin-bottom: 1rem;">
                                     <div style="flex: 1; min-width: 150px;">
                                         <p><strong>Pinyin:</strong> ${details.pinyin}</p>
-                                        <p><strong>Signification:</strong> ${details.meaning}</p>
-                                        <p><strong>Niveau HSK:</strong> ${details.level}</p>
+                                        <p><strong>Signification:</strong> ${details.meaningfr}</p>
+                                        <p><strong>Niveau HSK:</strong> ${details.hsk}</p>
                                     </div>
                                     <div style="flex: 1; min-width: 150px;">
                                         <p><strong>Traits:</strong> ${strokeCount}</p>
                                         <p><strong>Radical:</strong> ${radical}</p>
                                         <p><strong>Fréquence:</strong> ${freq}</p>
                                     </div>
-                                </div>
-                                
-                                <div class="character-example">
-                                    <h4>Exemples:</h4>
-                                    <ul>
-                                        ${details.examples.map(ex => `<li class="character-example-item">${ex}</li>`).join('')}
-                                    </ul>
                                 </div>
                                 
                                 ${details.etymology ? `
@@ -3203,7 +3150,7 @@
                                     <div class="character-example">
                                         <h4>Composants:</h4>
                                         <ul>
-                                            ${details.components.map(comp => `<li>${comp.component} - ${comp.meaning}</li>`).join('')}
+                                            ${details.components.map(comp => `<li>${comp.component} - ${comp.meaningfr}</li>`).join('')}
                                         </ul>
                                     </div>
                                 ` : ''}
