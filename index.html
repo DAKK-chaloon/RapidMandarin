@@ -744,6 +744,51 @@
             text-decoration: none;
         }
 
+        /* Style pour les boutons audio */
+        .audio-btn {
+            background-color: var(--secondary);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            margin-left: 8px;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+
+        .audio-btn:hover {
+            background-color: var(--primary);
+        }
+
+        .audio-btn-sm {
+            width: 24px;
+            height: 24px;
+            font-size: 12px;
+        }
+
+        .audio-btn.loading {
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
         @media (max-width: 768px) {
             nav {
                 flex-direction: column;
@@ -1022,6 +1067,9 @@
             <a href="#">Politique de confidentialité</a>
         </div>
     </footer>
+
+    <!-- Créer un élément audio caché pour la lecture -->
+    <audio id="tts-audio-player" style="display: none;"></audio>
 
     <script>
         // ===================================
@@ -1946,19 +1994,6 @@
             UI.updateStats();
         }
 
-        // function addRefreshButton() {
-        //     const refreshBtn = document.createElement('button');
-        //     refreshBtn.textContent = "Rafraîchir l'interface";
-        //     refreshBtn.className = "btn btn-secondary";
-        //     refreshBtn.style.position = "fixed";
-        //     refreshBtn.style.top = "10px";
-        //     refreshBtn.style.right = "10px";
-        //     refreshBtn.style.zIndex = "1000";
-
-        //     refreshBtn.addEventListener('click', refreshUserInterface);
-        //     document.body.appendChild(refreshBtn);
-        // }
-
         // ===================================
         // UTILITAIRE DE RÉINITIALISATION DU PROFIL
         // ===================================
@@ -2002,6 +2037,9 @@
             // S'assurer que l'interface utilisateur est initialisée
             UI.init();
 
+            // Initialiser la fonctionnalité de synthèse vocale
+            SpeechFeature.init();
+
             // Ajouter les boutons utilitaires
             addGenerateJsonButton();
             addResetProfileButton();
@@ -2022,10 +2060,10 @@
                 notification.style.animation = 'slideIn 0.5s ease';
 
                 notification.innerHTML = `
-            <h4 style="margin: 0 0 10px 0;">RapidMandarin initialisé</h4>
-            <p style="margin: 0;">Exemples réels chargés depuis sentences-cn-fr.tsv</p>
-            <button style="background: white; color: #457b9d; border: none; margin-top: 10px; padding: 5px 10px; border-radius: 4px; cursor: pointer;">OK</button>
-        `;
+                <h4 style="margin: 0 0 10px 0;">RapidMandarin initialisé</h4>
+                <p style="margin: 0;">Exemples réels chargés depuis sentences-cn-fr.tsv</p>
+                <button style="background: white; color: #457b9d; border: none; margin-top: 10px; padding: 5px 10px; border-radius: 4px; cursor: pointer;">OK</button>
+            `;
 
                 // Ajouter au document
                 document.body.appendChild(notification);
@@ -2038,11 +2076,11 @@
                     // Ajouter le style d'animation pour la sortie
                     const outStyle = document.createElement('style');
                     outStyle.textContent = `
-                @keyframes slideOut {
-                    from { transform: translateX(0); }
-                    to { transform: translateX(120%); }
-                }
-            `;
+                    @keyframes slideOut {
+                        from { transform: translateX(0); }
+                        to { transform: translateX(120%); }
+                    }
+                `;
                     document.head.appendChild(outStyle);
 
                     setTimeout(() => notification.remove(), 500);
@@ -2419,51 +2457,52 @@
                     }
                 };
 
+                // Amélioration : fonction showCharacterDetail avec défilement automatique
                 const showCharacterDetail = async (character) => {
-                    // Masquer le détail pendant le chargement sur mobile
-                    if (window.innerWidth < 768) {
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }
-
                     // Afficher un état de chargement
                     characterDetail.style.display = 'block';
                     characterDetail.innerHTML = `
-        <div class="loading-container">
-            <div class="loading-spinner"></div>
-            <p>Chargement des détails...</p>
-        </div>
-    `;
+                        <div class="loading-container">
+                            <div class="loading-spinner"></div>
+                            <p>Chargement des détails...</p>
+                        </div>
+                    `;
+
+                    // Faire défiler jusqu'à l'élément de détail avec un léger délai pour garantir l'affichage
+                    setTimeout(() => {
+                        characterDetail.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }, 100);
 
                     // S'assurer que le style CSS pour les exemples existe
                     if (!document.getElementById('examples-style')) {
                         const style = document.createElement('style');
                         style.id = 'examples-style';
                         style.textContent = `
-            .real-example {
-                padding: 8px;
-                margin-bottom: 8px;
-                background-color: #f5f8ff;
-                border-left: 3px solid #457b9d;
-                border-radius: 4px;
-            }
-            
-            .generated-example {
-                padding: 8px;
-                margin-bottom: 8px;
-                border-left: 3px solid #ddd;
-                border-radius: 4px;
-            }
-            
-            .example-sentence {
-                font-size: 1.1rem;
-                margin-bottom: 4px;
-            }
-            
-            .example-translation {
-                font-size: 0.9rem;
-                color: #666;
-            }
-        `;
+                            .real-example {
+                                padding: 8px;
+                                margin-bottom: 8px;
+                                background-color: #f5f8ff;
+                                border-left: 3px solid #457b9d;
+                                border-radius: 4px;
+                            }
+                            
+                            .generated-example {
+                                padding: 8px;
+                                margin-bottom: 8px;
+                                border-left: 3px solid #ddd;
+                                border-radius: 4px;
+                            }
+                            
+                            .example-sentence {
+                                font-size: 1.1rem;
+                                margin-bottom: 4px;
+                            }
+                            
+                            .example-translation {
+                                font-size: 0.9rem;
+                                color: #666;
+                            }
+                        `;
                         document.head.appendChild(style);
                     }
 
@@ -2480,51 +2519,56 @@
 
                         // Mettre à jour le conteneur de détails avec les nouvelles informations
                         characterDetail.innerHTML = `
-            <div class="character-detail">
-                <div class="character-info">
-                    <h3>${details.char} ${details.trad_char !== details.char ? `(${details.trad_char})` : ''}</h3>
-                    <p><strong>Pinyin:</strong> ${details.pinyin}</p>
-                    <p><strong>Signification:</strong> ${details.meaningfr}</p>
-                    <p><strong>Forme traditionnelle:</strong> ${tradChar}</p>
-                    <p><strong>Niveau HSK:</strong> ${details.hsk}</p>
-                    <p><strong>Nombre de traits:</strong> ${strokeCount}</p>
-                    <p><strong>Radical:</strong> ${radical}</p>
-                    
-                    ${details.etymology ? `
-                        <div class="character-example">
-                            <h4>Étymologie:</h4>
-                            <p>${details.etymology}</p>
-                        </div>
-                    ` : ''}
-                    
-                    ${details.examples && details.examples.length > 0 ? `
-                        <div class="character-example">
-                            <h4>Exemples d'utilisation:</h4>
-                            <ul style="list-style-type: none; padding-left: 0;">
-                                ${details.examples.map(ex => `
-                                    <li class="${ex.isReal ? 'real-example' : 'generated-example'}">
-                                        <div class="example-sentence">${ex.sentence}</div>
-                                        ${ex.translation ? `<div class="example-translation">${ex.translation}</div>` : ''}
-                                    </li>
-                                `).join('')}
-                            </ul>
-                        </div>
-                    ` : ''}
-                    
-                    ${details.components && details.components.length > 0 ? `
-                        <div class="character-example">
-                            <h4>Composants:</h4>
-                            <ul>
-                                ${details.components.map(comp => `<li>${comp.component} - ${comp.meaningfr}</li>`).join('')}
-                            </ul>
-                        </div>
-                    ` : ''}
-                </div>
-                <div class="character-writer" id="learn-character-writer">
-                    <!-- Character animator will be inserted here -->
-                </div>
-            </div>
-        `;
+                            <div class="character-detail">
+                                <div class="character-info">
+                                    <h3>${details.char} ${details.trad_char !== details.char ? `(${details.trad_char})` : ''}</h3>
+                                    <p><strong>Pinyin:</strong> ${details.pinyin}</p>
+                                    <p><strong>Signification:</strong> ${details.meaningfr}</p>
+                                    <p><strong>Forme traditionnelle:</strong> ${tradChar}</p>
+                                    <p><strong>Niveau HSK:</strong> ${details.hsk}</p>
+                                    <p><strong>Nombre de traits:</strong> ${strokeCount}</p>
+                                    <p><strong>Radical:</strong> ${radical}</p>
+                                    
+                                    ${details.etymology ? `
+                                        <div class="character-example">
+                                            <h4>Étymologie:</h4>
+                                            <p>${details.etymology}</p>
+                                        </div>
+                                    ` : ''}
+                                    
+                                    ${details.examples && details.examples.length > 0 ? `
+                                        <div class="character-example">
+                                            <h4>Exemples d'utilisation:</h4>
+                                            <ul style="list-style-type: none; padding-left: 0;">
+                                                ${details.examples.map(ex => `
+                                                    <li class="${ex.isReal ? 'real-example' : 'generated-example'}">
+                                                        <div class="example-sentence">${ex.sentence}</div>
+                                                        ${ex.translation ? `<div class="example-translation">${ex.translation}</div>` : ''}
+                                                    </li>
+                                                `).join('')}
+                                            </ul>
+                                        </div>
+                                    ` : ''}
+                                    
+                                    ${details.components && details.components.length > 0 ? `
+                                        <div class="character-example">
+                                            <h4>Composants:</h4>
+                                            <ul>
+                                                ${details.components.map(comp => `<li>${comp.component} - ${comp.meaningfr}</li>`).join('')}
+                                            </ul>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                                <div class="character-writer" id="learn-character-writer">
+                                    <!-- Character animator will be inserted here -->
+                                </div>
+                            </div>
+                        `;
+
+                        // Faire défiler à nouveau pour s'assurer que le contenu complet est visible
+                        setTimeout(() => {
+                            characterDetail.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }, 100);
 
                         // Initialiser l'animation de caractère
                         try {
@@ -2540,19 +2584,22 @@
                         } catch (err) {
                             console.error('Error initializing character writer:', err);
                             document.getElementById('learn-character-writer').innerHTML = `
-                <div style="text-align: center;">
-                    <p>Erreur d'animation du caractère.</p>
-                    <div class="character" style="font-size: 8rem;">${details.char}</div>
-                </div>
-            `;
+                                <div style="text-align: center;">
+                                    <p>Erreur d'animation du caractère.</p>
+                                    <div class="character" style="font-size: 8rem;">${details.char}</div>
+                                </div>
+                            `;
                         }
                     } catch (error) {
                         console.error("Error fetching character details:", error);
                         characterDetail.innerHTML = `
-            <div class="card">
-                <p>Erreur lors du chargement des détails. Veuillez réessayer.</p>
-            </div>
-        `;
+                            <div class="card">
+                                <p>Erreur lors du chargement des détails. Veuillez réessayer.</p>
+                            </div>
+                        `;
+
+                        // Même en cas d'erreur, faire défiler vers la section de détails
+                        characterDetail.scrollIntoView({ behavior: 'smooth', block: 'start' });
                     }
                 };
 
@@ -2626,16 +2673,16 @@
                 // Ajouter un style pour indiquer quand on charge plus de caractères
                 const style = document.createElement('style');
                 style.textContent = `
-        @keyframes pulsate {
-            0% { opacity: 0.4; }
-            50% { opacity: 0.8; }
-            100% { opacity: 0.4; }
-        }
-        .loading-indicator .loading-spinner {
-            animation: spin 1s linear infinite, pulsate 1.5s ease-in-out infinite;
-            margin: 0 auto;
-        }
-    `;
+                    @keyframes pulsate {
+                        0% { opacity: 0.4; }
+                        50% { opacity: 0.8; }
+                        100% { opacity: 0.4; }
+                    }
+                    .loading-indicator .loading-spinner {
+                        animation: spin 1s linear infinite, pulsate 1.5s ease-in-out infinite;
+                        margin: 0 auto;
+                    }
+                `;
                 document.head.appendChild(style);
 
                 // Initialiser avec le niveau par défaut
@@ -3775,6 +3822,291 @@
         };
 
         // ===================================
+        // SYNTHÈSE VOCALE AVEC GOOGLE TRANSLATE
+        // ===================================
+
+        // Configuration de la synthèse vocale pour RapidMandarin utilisant Google Translate
+        const SpeechFeature = {
+            // Initialiser la fonctionnalité audio
+            init() {
+                // Ajouter les styles pour les boutons audio
+                if (!document.getElementById('audio-btn-styles')) {
+                    const style = document.createElement('style');
+                    style.id = 'audio-btn-styles';
+                    style.textContent = `
+                        .audio-btn {
+                            background-color: var(--secondary);
+                            color: white;
+                            border: none;
+                            border-radius: 50%;
+                            width: 30px;
+                            height: 30px;
+                            display: inline-flex;
+                            justify-content: center;
+                            align-items: center;
+                            cursor: pointer;
+                            margin-left: 8px;
+                            font-size: 14px;
+                            transition: background-color 0.3s;
+                        }
+
+                        .audio-btn:hover {
+                            background-color: var(--primary);
+                        }
+
+                        .audio-btn-sm {
+                            width: 24px;
+                            height: 24px;
+                            font-size: 12px;
+                        }
+                        
+                        .audio-btn.loading {
+                            animation: pulse 1s infinite;
+                        }
+                        
+                        @keyframes pulse {
+                            0% { opacity: 1; }
+                            50% { opacity: 0.5; }
+                            100% { opacity: 1; }
+                        }
+                    `;
+                    document.head.appendChild(style);
+                }
+
+                // Créer un élément audio masqué pour la lecture
+                if (!document.getElementById('tts-audio-player')) {
+                    const audioPlayer = document.createElement('audio');
+                    audioPlayer.id = 'tts-audio-player';
+                    audioPlayer.style.display = 'none';
+                    document.body.appendChild(audioPlayer);
+                }
+
+                console.log("Fonctionnalité de synthèse vocale Google Translate initialisée");
+            },
+
+            // Lire le texte en chinois avec Google Translate TTS
+            speak(text, button = null) {
+                if (!text || text.trim() === '') return;
+
+                // Récupérer le lecteur audio
+                const audioPlayer = document.getElementById('tts-audio-player');
+                if (!audioPlayer) {
+                    console.error("Lecteur audio non trouvé");
+                    return;
+                }
+
+                // Ajouter une animation de chargement au bouton
+                if (button) {
+                    button.classList.add('loading');
+                    button.setAttribute('disabled', 'disabled');
+                }
+
+                // Limiter la longueur du texte (Google Translate a une limite)
+                const maxLength = 150;
+                const textToSpeak = text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+
+                // Créer l'URL pour l'API TTS de Google Translate
+                // Paramètres: tl=langue cible (zh-CN=mandarin), q=texte à prononcer, client=tw-ob (navigateur)
+                const encodedText = encodeURIComponent(textToSpeak);
+                const audioUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=zh-CN&client=tw-ob&q=${encodedText}`;
+
+                // Configurer les événements du lecteur audio
+                audioPlayer.onloadeddata = () => {
+                    audioPlayer.play();
+                };
+
+                audioPlayer.onended = () => {
+                    if (button) {
+                        button.classList.remove('loading');
+                        button.removeAttribute('disabled');
+                    }
+                };
+
+                audioPlayer.onerror = () => {
+                    console.error("Erreur lors du chargement de l'audio");
+                    if (button) {
+                        button.classList.remove('loading');
+                        button.removeAttribute('disabled');
+                    }
+                    // Fallback à la synthèse vocale du navigateur
+                    this.speakFallback(textToSpeak, button);
+                };
+
+                // Charger et lire l'audio
+                audioPlayer.src = audioUrl;
+            },
+
+            // Méthode de secours utilisant l'API Web Speech si Google Translate échoue
+            speakFallback(text, button = null) {
+                if (!('speechSynthesis' in window)) {
+                    console.warn("La synthèse vocale n'est pas supportée par ce navigateur");
+                    alert("La prononciation n'est pas disponible actuellement.");
+                    return;
+                }
+
+                // Créer une nouvelle instance de synthèse vocale
+                const utterance = new SpeechSynthesisUtterance(text);
+
+                // Définir la langue sur le chinois mandarin
+                utterance.lang = 'zh-CN';
+
+                // Récupérer les voix chinoises disponibles
+                const allVoices = window.speechSynthesis.getVoices();
+                const chineseVoices = allVoices.filter(voice =>
+                    voice.lang.includes('zh') ||
+                    voice.lang.includes('cmn') ||
+                    voice.lang.includes('yue')
+                );
+
+                if (chineseVoices.length > 0) {
+                    utterance.voice = chineseVoices[0];
+                }
+
+                // Paramètres de lecture
+                utterance.rate = 0.9;
+                utterance.volume = 1;
+
+                // Événements pour gérer l'interface
+                utterance.onend = () => {
+                    if (button) {
+                        button.classList.remove('loading');
+                        button.removeAttribute('disabled');
+                    }
+                };
+
+                utterance.onerror = () => {
+                    if (button) {
+                        button.classList.remove('loading');
+                        button.removeAttribute('disabled');
+                    }
+                    console.error("Erreur pendant la synthèse vocale");
+                };
+
+                // Lire le texte
+                window.speechSynthesis.speak(utterance);
+            }
+        };
+
+        // Fonction pour mettre à jour showCharacterDetail avec les boutons audio
+        function enhanceShowCharacterDetail(originalFunction) {
+            return async function (character) {
+                // D'abord, appeler la fonction originale
+                await originalFunction(character);
+
+                // Ensuite, ajouter les boutons audio au contenu généré
+                const characterDetail = document.getElementById('character-detail');
+                if (!characterDetail) return;
+
+                // Rechercher l'élément h3 contenant le caractère
+                const characterHeader = characterDetail.querySelector('h3');
+                if (characterHeader) {
+                    // Extraire le caractère (premier caractère de l'en-tête)
+                    const character = characterHeader.textContent.trim()[0];
+
+                    // Ajouter le bouton audio s'il n'existe pas déjà
+                    if (!characterHeader.querySelector('.audio-btn')) {
+                        const audioBtn = document.createElement('button');
+                        audioBtn.className = 'audio-btn';
+                        audioBtn.innerHTML = '🔊';
+                        audioBtn.title = 'Écouter la prononciation';
+                        audioBtn.setAttribute('data-text', character);
+                        characterHeader.appendChild(audioBtn);
+
+                        // Ajouter l'événement de clic
+                        audioBtn.addEventListener('click', (e) => {
+                            const text = e.target.getAttribute('data-text');
+                            SpeechFeature.speak(text, e.target);
+                        });
+                    }
+                }
+
+                // Ajouter des boutons audio aux exemples
+                const exampleSentences = characterDetail.querySelectorAll('.example-sentence');
+                exampleSentences.forEach(sentence => {
+                    // Ne pas ajouter de bouton s'il en existe déjà un
+                    if (!sentence.querySelector('.audio-btn')) {
+                        // Récupérer le texte de l'exemple (sans le bouton existant)
+                        const sentenceText = sentence.childNodes[0].textContent.trim();
+
+                        const audioBtn = document.createElement('button');
+                        audioBtn.className = 'audio-btn audio-btn-sm';
+                        audioBtn.innerHTML = '🔊';
+                        audioBtn.title = 'Écouter l\'exemple';
+                        audioBtn.setAttribute('data-text', sentenceText);
+                        sentence.appendChild(audioBtn);
+
+                        // Ajouter l'événement de clic
+                        audioBtn.addEventListener('click', (e) => {
+                            const text = e.target.getAttribute('data-text');
+                            SpeechFeature.speak(text, e.target);
+                        });
+                    }
+                });
+            };
+        }
+
+        // Fonction pour mettre à jour showCharacterModal avec les boutons audio
+        function enhanceShowCharacterModal(originalFunction) {
+            return function (character) {
+                // Appeler d'abord la fonction originale
+                originalFunction(character);
+
+                // Récupérer la modale et ajouter les boutons audio après qu'elle soit remplie
+                const modalBody = document.getElementById('modal-body');
+
+                // Utiliser un MutationObserver pour détecter quand le contenu de la modale est mis à jour
+                const observer = new MutationObserver((mutations) => {
+                    // Vérifier s'il y a eu des modifications dans le contenu
+                    if (mutations.some(mutation => mutation.type === 'childList')) {
+                        // Rechercher le caractère principal et ajouter un bouton audio
+                        const characterHeader = modalBody.querySelector('h3');
+                        if (characterHeader && !characterHeader.querySelector('.audio-btn')) {
+                            const character = characterHeader.textContent.trim()[0];
+
+                            const audioBtn = document.createElement('button');
+                            audioBtn.className = 'audio-btn';
+                            audioBtn.innerHTML = '🔊';
+                            audioBtn.title = 'Écouter la prononciation';
+                            audioBtn.setAttribute('data-text', character);
+                            characterHeader.appendChild(audioBtn);
+
+                            audioBtn.addEventListener('click', (e) => {
+                                const text = e.target.getAttribute('data-text');
+                                SpeechFeature.speak(text, e.target);
+                            });
+                        }
+
+                        // Ajouter des boutons audio aux exemples
+                        const exampleSentences = modalBody.querySelectorAll('.example-sentence');
+                        exampleSentences.forEach(sentence => {
+                            if (!sentence.querySelector('.audio-btn')) {
+                                const sentenceText = sentence.childNodes[0].textContent.trim();
+
+                                const audioBtn = document.createElement('button');
+                                audioBtn.className = 'audio-btn audio-btn-sm';
+                                audioBtn.innerHTML = '🔊';
+                                audioBtn.title = 'Écouter l\'exemple';
+                                audioBtn.setAttribute('data-text', sentenceText);
+                                sentence.appendChild(audioBtn);
+
+                                audioBtn.addEventListener('click', (e) => {
+                                    const text = e.target.getAttribute('data-text');
+                                    SpeechFeature.speak(text, e.target);
+                                });
+                            }
+                        });
+
+                        // Arrêter l'observation une fois les modifications faites
+                        observer.disconnect();
+                    }
+                });
+
+                // Observer les changements dans le corps de la modale
+                observer.observe(modalBody, { childList: true, subtree: true });
+            };
+        }
+
+        // ===================================
         // SCRIPT D'INTÉGRATION
         // ===================================
 
@@ -3805,15 +4137,200 @@
         document.addEventListener('DOMContentLoaded', function () {
             // Initialiser sans attendre le test d'API
             initializeRapidMandarin();
+
+            // Observer quand UI est complètement initialisé pour ajouter les fonctionnalités audio
+            const checkUIInitialized = setInterval(function () {
+                if (typeof UI !== 'undefined' && UI.showCharacterDetail && UI.showCharacterModal) {
+                    // Stocker les fonctions originales
+                    const originalShowCharacterDetail = UI.showCharacterDetail;
+                    const originalShowCharacterModal = UI.showCharacterModal;
+
+                    // Remplacer par les versions améliorées
+                    UI.showCharacterDetail = enhanceShowCharacterDetail(originalShowCharacterDetail);
+                    UI.showCharacterModal = enhanceShowCharacterModal(originalShowCharacterModal);
+
+                    clearInterval(checkUIInitialized);
+                    console.log("Fonctionnalités audio Google Translate intégrées à l'interface utilisateur");
+                }
+            }, 100);
         });
 
         document.addEventListener('DOMContentLoaded', function () {
             setTimeout(function () {
-                //addRefreshButton();
                 // Faire un rafraîchissement initial
                 refreshUserInterface();
             }, 1000);
         });
+
+        // Fonctionnalité de synthèse vocale Google Translate
+        function speakChinese(text, button = null) {
+            if (!text || text.trim() === '') return;
+
+            // Ajouter une classe de chargement au bouton si fourni
+            if (button) {
+                button.classList.add('loading');
+                button.disabled = true;
+            }
+
+            // Limiter la longueur du texte pour Google TTS
+            const maxLength = 150;
+            const textToSpeak = text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+
+            // Obtenir ou créer le lecteur audio
+            let audioPlayer = document.getElementById('tts-audio-player');
+            if (!audioPlayer) {
+                audioPlayer = document.createElement('audio');
+                audioPlayer.id = 'tts-audio-player';
+                audioPlayer.style.display = 'none';
+                document.body.appendChild(audioPlayer);
+            }
+
+            // Construire l'URL de Google Translate TTS
+            const encodedText = encodeURIComponent(textToSpeak);
+            const audioUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=zh-CN&client=tw-ob&q=${encodedText}`;
+
+            // Configurer les événements audio
+            audioPlayer.onloadeddata = () => {
+                audioPlayer.play();
+            };
+
+            audioPlayer.onended = () => {
+                if (button) {
+                    button.classList.remove('loading');
+                    button.disabled = false;
+                }
+            };
+
+            audioPlayer.onerror = () => {
+                console.error("Erreur lors du chargement de l'audio");
+                if (button) {
+                    button.classList.remove('loading');
+                    button.disabled = false;
+                }
+                alert("Impossible de charger l'audio. Veuillez réessayer.");
+            };
+
+            // Charger et lire l'audio
+            audioPlayer.src = audioUrl;
+        }
+
+        // Fonction pour ajouter un bouton audio à un élément
+        function addAudioButton(element, text, isSmall = false) {
+            if (!element || element.querySelector('.audio-btn')) return;
+
+            const audioBtn = document.createElement('button');
+            audioBtn.className = isSmall ? 'audio-btn audio-btn-sm' : 'audio-btn';
+            audioBtn.innerHTML = '🔊';
+            audioBtn.title = 'Écouter la prononciation';
+            audioBtn.setAttribute('data-text', text);
+
+            audioBtn.addEventListener('click', function (e) {
+                e.stopPropagation(); // Empêcher la propagation au parent
+                const textToSpeak = e.target.getAttribute('data-text');
+                speakChinese(textToSpeak, e.target);
+            });
+
+            element.appendChild(audioBtn);
+        }
+
+        // Observer la page pour ajouter des boutons audio aux éléments dynamiques
+        function setupAudioObserver() {
+            // Ajouter des styles pour les boutons audio s'ils n'existent pas
+            if (!document.getElementById('audio-btn-styles')) {
+                const style = document.createElement('style');
+                style.id = 'audio-btn-styles';
+                style.textContent = `
+            .audio-btn {
+                background-color: #457b9d;
+                color: white;
+                border: none;
+                border-radius: 50%;
+                width: 30px;
+                height: 30px;
+                display: inline-flex;
+                justify-content: center;
+                align-items: center;
+                cursor: pointer;
+                margin-left: 8px;
+                font-size: 14px;
+                transition: background-color 0.3s;
+            }
+            
+            .audio-btn:hover {
+                background-color: #e63946;
+            }
+            
+            .audio-btn-sm {
+                width: 24px;
+                height: 24px;
+                font-size: 12px;
+            }
+            
+            .audio-btn.loading {
+                animation: pulse 1s infinite;
+            }
+            
+            @keyframes pulse {
+                0% { opacity: 1; }
+                50% { opacity: 0.5; }
+                100% { opacity: 1; }
+            }
+        `;
+                document.head.appendChild(style);
+            }
+
+            // Observer les changements dans le corps du document
+            const observer = new MutationObserver(function (mutations) {
+                mutations.forEach(function (mutation) {
+                    if (mutation.type === 'childList') {
+                        // Chercher les h3 dans les détails de caractère
+                        const characterDetail = document.getElementById('character-detail');
+                        if (characterDetail && characterDetail.style.display !== 'none') {
+                            const header = characterDetail.querySelector('h3');
+                            if (header) {
+                                const character = header.textContent.trim()[0];
+                                addAudioButton(header, character);
+                            }
+
+                            // Chercher les exemples de phrases
+                            const examples = characterDetail.querySelectorAll('.example-sentence');
+                            examples.forEach(example => {
+                                const text = example.childNodes[0].textContent.trim();
+                                addAudioButton(example, text, true);
+                            });
+                        }
+
+                        // Chercher les h3 dans les modales
+                        const modalBody = document.getElementById('modal-body');
+                        if (modalBody) {
+                            const header = modalBody.querySelector('h3');
+                            if (header) {
+                                const character = header.textContent.trim()[0];
+                                addAudioButton(header, character);
+                            }
+
+                            // Chercher les exemples de phrases
+                            const examples = modalBody.querySelectorAll('.example-sentence');
+                            examples.forEach(example => {
+                                const text = example.childNodes[0].textContent.trim();
+                                addAudioButton(example, text, true);
+                            });
+                        }
+                    }
+                });
+            });
+
+            // Observer tout le corps du document pour les changements
+            observer.observe(document.body, {
+                childList: true,
+                subtree: true
+            });
+
+            console.log("Observateur audio mis en place ✓");
+        }
+
+        // Lancer l'observateur après le chargement complet de la page
+        window.addEventListener('load', setupAudioObserver);
     </script>
 </body>
 
