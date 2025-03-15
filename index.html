@@ -9,6 +9,31 @@
     <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5.0/dist/hanzi-writer.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/confetti-js@0.0.18/dist/index.min.js"></script>
     <style>
+        .real-example {
+            padding: 8px;
+            margin-bottom: 8px;
+            background-color: #f5f8ff;
+            border-left: 3px solid #457b9d;
+            border-radius: 4px;
+        }
+
+        .generated-example {
+            padding: 8px;
+            margin-bottom: 8px;
+            border-left: 3px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .example-sentence {
+            font-size: 1.1rem;
+            margin-bottom: 4px;
+        }
+
+        .example-translation {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
         /* Même style qu'avant */
         :root {
             --primary: #e63946;
@@ -1000,19 +1025,16 @@
 
     <script>
         // ===================================
-        // API SERVICES - HANZIBASE INTEGRATION
+        // API SERVICES - DONNÉES JSON EXTERNES 
         // ===================================
 
-        // API Client pour les données chinoises avec HanziBase
         const ChineseAPI = {
             // Configuration de l'API
             config: {
-                // API principale - HanziBase API
-                apiBaseUrl: 'https://api.hanzibase.net',
-                // API de reconnaissance d'écriture manuscrite (simulée)
-                handwritingApiUrl: 'https://api.handwritingchinese.com/recognize',
-                // Clé API (normalement stockée de manière sécurisée)
-                apiKey: 'demo-key-12345'
+                // Chemin vers le fichier JSON local
+                jsonPath: './rapidmandarin.hanzis.json',
+                // Délai de simulation pour la reconnaissance d'écriture manuscrite
+                handwritingDelay: 800
             },
 
             // Méthode pour obtenir des caractères par niveau HSK
@@ -1021,23 +1043,31 @@
                     // Vérifier si les données sont déjà chargées
                     if (!this.hanziData || this.hanziData.length === 0) {
                         console.log("Chargement du fichier JSON...");
-                        const response = await fetch("./rapidmandarin.hanzis.json"); // Assurez-vous que le chemin est correct
+                        try {
+                            const response = await fetch(this.config.jsonPath);
 
-                        if (!response.ok) {
-                            throw new Error(`Impossible de charger le fichier JSON (code ${response.status})`);
+                            if (!response.ok) {
+                                throw new Error(`Impossible de charger le fichier JSON (code ${response.status})`);
+                            }
+
+                            this.hanziData = await response.json();
+                            console.log(`Fichier JSON chargé, ${this.hanziData.length} caractères trouvés`);
+                        } catch (fetchError) {
+                            console.error("Erreur lors du chargement du JSON:", fetchError);
+                            // Fallback: créer des données fictives si le JSON n'est pas disponible
+                            this.hanziData = this.createFallbackData();
+                            console.log("Utilisation des données fictives de secours");
                         }
-
-                        this.hanziData = await response.json();
                     }
 
-                    console.log(`Fetching characters for level ${level}, offset ${offset}, limit ${limit}`);
+                    console.log(`Récupération des caractères pour niveau ${level}, offset ${offset}, limit ${limit}`);
 
                     // Filtrer par niveau HSK si spécifié
                     let characters = this.hanziData;
                     if (level !== "ALL") {
                         const hskLevel = parseInt(level.replace("HSK", ""));
                         characters = characters.filter(char => {
-                            const charHSK = this.getHSKLevelFromFreq(char.freq || 5); // Assurez-vous que char.freq existe
+                            const charHSK = this.getHSKLevelFromFreq(char.freq || 5);
                             return charHSK === hskLevel;
                         });
                     }
@@ -1045,13 +1075,11 @@
                     // Limiter les résultats en fonction de l'offset et de la limite
                     const paginatedCharacters = characters.slice(offset, offset + limit);
 
-                    console.log(paginatedCharacters);
-
                     return {
                         success: true,
                         data: paginatedCharacters,
-                        total: characters.length, // Retourne le total des caractères filtrés, pas seulement la pagination
-                        message: "Characters fetched successfully from local JSON"
+                        total: characters.length, // Retourne le total des caractères filtrés
+                        message: "Characters fetched successfully"
                     };
                 } catch (error) {
                     console.error("Error fetching characters:", error);
@@ -1063,30 +1091,76 @@
                 }
             },
 
+            // Créer des données de secours au cas où le fichier JSON ne se charge pas
+            createFallbackData() {
+                console.log("Création de données de secours...");
+                const fallbackData = [
+                    // HSK Niveau 1 (caractères fondamentaux)
+                    { id: 1, char: "我", trad_char: "我", pinyin: "wǒ", pinyin_normalised: "wo3", meaningfr: "je, moi", meaningen: "I, me", freq: 1, stroke_count: 7, radical: "戈" },
+                    { id: 2, char: "你", trad_char: "你", pinyin: "nǐ", pinyin_normalised: "ni3", meaningfr: "tu, toi", meaningen: "you", freq: 1, stroke_count: 7, radical: "亻" },
+                    { id: 3, char: "他", trad_char: "他", pinyin: "tā", pinyin_normalised: "ta1", meaningfr: "il, lui", meaningen: "he, him", freq: 1, stroke_count: 5, radical: "亻" },
+                    { id: 4, char: "她", trad_char: "她", pinyin: "tā", pinyin_normalised: "ta1", meaningfr: "elle", meaningen: "she, her", freq: 1, stroke_count: 6, radical: "女" },
+                    { id: 5, char: "它", trad_char: "它", pinyin: "tā", pinyin_normalised: "ta1", meaningfr: "il/elle (pour les objets)", meaningen: "it", freq: 1, stroke_count: 7, radical: "宀" }
+                ];
+
+                // Ajouter quelques caractères HSK2 et HSK3
+                for (let i = 0; i < 5; i++) {
+                    fallbackData.push({
+                        id: 100 + i,
+                        char: String.fromCharCode(19968 + i * 10), // Utilise des caractères Unicode chinois
+                        trad_char: String.fromCharCode(19968 + i * 10),
+                        pinyin: "piāo",
+                        pinyin_normalised: "piao1",
+                        meaningfr: `caractère HSK2 secours ${i}`,
+                        meaningen: `fallback HSK2 character ${i}`,
+                        freq: 3,
+                        stroke_count: 5 + i,
+                        radical: "口"
+                    });
+
+                    fallbackData.push({
+                        id: 200 + i,
+                        char: String.fromCharCode(20000 + i * 10),
+                        trad_char: String.fromCharCode(20000 + i * 10),
+                        pinyin: "kuàng",
+                        pinyin_normalised: "kuang4",
+                        meaningfr: `caractère HSK3 secours ${i}`,
+                        meaningen: `fallback HSK3 character ${i}`,
+                        freq: 5,
+                        stroke_count: 8 + i,
+                        radical: "木"
+                    });
+                }
+
+                return fallbackData;
+            },
+
+            // CORRECTION: S'assurer que l'ID est présent et mappé
             mapLocalCharacterToInternal(char) {
                 return {
+                    id: char.id || Math.floor(Math.random() * 100000), // Garantir un ID si absent
                     char: char.char,
                     pinyin: char.pinyin || '',
                     pinyin_normalised: char.pinyin_normalised || '',
                     meaningfr: char.meaningfr || '',
                     meaningen: char.meaningen || '',
                     freq: char.freq || 5,
-                    trad_char: char.trad_char,
+                    trad_char: char.trad_char || char.char,
                     hsk: this.getHSKLevelFromFreq(char.freq || 5),
-                    radical: char.radical,
-                    stroke_count: char.stroke_count
+                    radical: char.radical || '?',
+                    stroke_count: char.stroke_count || '?'
                 };
             },
 
-            // Générer des exemples fictifs basés sur le caractère
+            // Générer des exemples basés sur le caractère
             generateExamples(character, meaning) {
                 const meaningParts = meaning.split(';');
                 const mainMeaning = meaningParts[0].trim().split(',')[0].trim();
 
-                // Exemples génériques basés sur le sens principal
                 return [
                     `${character}好 (${mainMeaning} bien)`,
-                    `我的${character} (mon/ma ${mainMeaning})`
+                    `我的${character} (mon/ma ${mainMeaning})`,
+                    `${character}学习 (étudier ${mainMeaning})`
                 ];
             },
 
@@ -1103,24 +1177,30 @@
                     if (!query) return { success: true, data: [], message: "Query is empty" };
 
                     console.log(`Searching for: ${query}`);
+
                     // Vérifier si les données JSON sont chargées, sinon les charger
                     if (!this.hanziData || this.hanziData.length === 0) {
                         console.log("Chargement du fichier JSON...");
-                        const response = await fetch("./rapidmandarin.hanzis.json");
+                        try {
+                            const response = await fetch(this.config.jsonPath);
 
-                        if (!response.ok) {
-                            throw new Error(`Impossible de charger le fichier JSON (code ${response.status})`);
+                            if (!response.ok) {
+                                throw new Error(`Impossible de charger le fichier JSON (code ${response.status})`);
+                            }
+
+                            this.hanziData = await response.json();
+                        } catch (fetchError) {
+                            console.error("Erreur lors du chargement du JSON:", fetchError);
+                            this.hanziData = this.createFallbackData();
                         }
-
-                        this.hanziData = await response.json();
                     }
 
                     // Recherche dans les données JSON locales
                     const localResults = this.hanziData.filter(char =>
-                        char.char.includes(query) ||
+                        char.char?.includes(query) ||
                         (char.pinyin && char.pinyin.toLowerCase().includes(query.toLowerCase())) ||
                         (char.pinyin_normalised && char.pinyin_normalised.toLowerCase().includes(query.toLowerCase())) ||
-                        (char.meaningfr && char.meaningfr.toLowerCase().includes(query.toLowerCase()))||
+                        (char.meaningfr && char.meaningfr.toLowerCase().includes(query.toLowerCase())) ||
                         (char.meaningen && char.meaningen.toLowerCase().includes(query.toLowerCase()))
                     );
 
@@ -1142,16 +1222,16 @@
                 }
             },
 
-            // Méthode pour reconnaître l'écriture manuscrite
+            // Méthode pour reconnaître l'écriture manuscrite (simulation)
             async recognizeHandwriting(imageData) {
                 try {
-                    console.log("Recognizing handwriting...");
+                    console.log("Simulation de reconnaissance d'écriture...");
 
                     // Simuler un délai réseau
-                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    await new Promise(resolve => setTimeout(resolve, this.config.handwritingDelay));
 
                     // Simuler des résultats de reconnaissance
-                    // Utiliser le premier caractère du niveau HSK1
+                    // Utiliser les premiers caractères du niveau HSK1
                     const hsk1Chars = await this.getCharactersByLevel("HSK1");
                     const randomChars = [];
 
@@ -1163,10 +1243,12 @@
                         }
                     } else {
                         // Fallback: utiliser des données locales
-                        const localChars = HanziDB.getCharactersByLevel("HSK1");
+                        const fallbackChars = this.createFallbackData().filter(
+                            char => this.getHSKLevelFromFreq(char.freq) === 1
+                        );
                         for (let i = 0; i < 5; i++) {
-                            const randomIndex = Math.floor(Math.random() * localChars.length);
-                            randomChars.push(localChars[randomIndex]);
+                            const randomIndex = Math.floor(Math.random() * fallbackChars.length);
+                            randomChars.push(fallbackChars[randomIndex]);
                         }
                     }
 
@@ -1175,8 +1257,11 @@
                         character: char.char,
                         score: Math.random() * 0.5 + 0.5, // Score entre 0.5 et 1.0
                         details: {
+                            id: char.id, // Important d'inclure l'ID pour le système d'XP
                             pinyin: char.pinyin,
-                            meaningfr: char.meaningfr
+                            meaningfr: char.meaningfr,
+                            stroke_count: char.stroke_count,
+                            radical: char.radical
                         }
                     })).sort((a, b) => b.score - a.score);
 
@@ -1195,10 +1280,10 @@
                 }
             },
 
-            // Méthode pour obtenir les détails d'un caractère
+            // Modification de la méthode getCharacterDetails pour inclure les exemples du fichier TSV
             async getCharacterDetails(character) {
                 try {
-                    console.log(`Getting details for characterrr: ${character}`);
+                    console.log(`Getting details for character: ${character}`);
 
                     // Rechercher le caractère
                     const searchResponse = await this.searchCharacter(character);
@@ -1207,22 +1292,42 @@
                         throw new Error(`Character "${character}" not found`);
                     }
 
-                    console.log(searchResponse);
                     // Obtenir le premier caractère correspondant
                     const char = searchResponse.data.find(c => c.char === character) || searchResponse.data[0];
-                    console.log(char)
 
-                    // Ajouter des données supplémentaires (puisque l'API ne fournit pas certains détails)
+                    // Trouver des exemples dans le fichier TSV
+                    const realExamples = await this.findExamplesWithCharacter(character);
+
+                    // Générer des exemples supplémentaires si nécessaire
+                    const genericExamples = this.generateExamples(character, char.meaningfr);
+
+                    // Fusionner les exemples (en donnant la priorité aux exemples réels)
+                    const examples = [
+                        ...realExamples.map(ex => ({
+                            sentence: ex.chinese,
+                            translation: ex.french,
+                            isReal: true
+                        })),
+                        // N'ajouter des exemples génériques que si nous n'avons pas assez d'exemples réels
+                        ...(realExamples.length < 3 ? genericExamples.map(ex => ({
+                            sentence: ex,
+                            translation: "",
+                            isReal: false
+                        })) : [])
+                    ].slice(0, 5); // Limiter à 5 exemples maximum
+
+                    // Ajouter des données supplémentaires
                     const details = {
                         ...char,
-                        etymology: "Information étymologique sur l'origine du caractère",
+                        examples: examples,
+                        etymology: `Information étymologique sur l'origine du caractère ${char.char}`,
                         components: [
                             { component: char.radical, meaningfr: "radical principal" }
                         ],
-                        // commonWords: [
-                        //     { word: `${char}好`, pinyin: "nǐhǎo", meaning: "bonjour" },
-                        //     { word: `${char}们`, pinyin: "nǐmen", meaning: "vous (pluriel)" }
-                        // ]
+                        commonWords: [
+                            { word: `${char.char}好`, pinyin: `${char.pinyin}hǎo`, meaning: `${char.meaningfr} bien` },
+                            { word: `我的${char.char}`, pinyin: `wǒde${char.pinyin}`, meaning: `mon/ma ${char.meaningfr}` }
+                        ]
                     };
 
                     return {
@@ -1254,10 +1359,10 @@
 
                     if (charInfo.success && charInfo.data.length > 0) {
                         const char = charInfo.data.find(c => c.char === character) || charInfo.data[0];
-                        strokeCount = char.strokes || 5;
+                        strokeCount = char.stroke_count || 5;
                     }
 
-                    // Données fictives
+                    // Données fictives de l'ordre des traits
                     const strokeData = {
                         character: character,
                         strokeCount: strokeCount,
@@ -1278,157 +1383,80 @@
                         message: `Erreur: ${error.message}`
                     };
                 }
-            }
-        };
-
-        // Base de données locale des caractères chinois (pour fallback)
-        const HanziDB = {
-            // Base de données des caractères
-            database: [
-                // HSK Niveau 1 (caractères fondamentaux)
-                { id: 525, character: "家", traditional: "家", pinyin: "jiā", meaning: "house, home, residence; family", level: "HSK1", examples: ["我家很大。 (Ma maison est grande.)", "回家 (rentrer à la maison)"], strokes: 10, radical: "宀" },
-                { id: 1, character: "我", traditional: "我", pinyin: "wǒ", meaning: "je, moi", level: "HSK1", examples: ["我是法国人。 (Je suis français.)", "我喜欢学习汉语。 (J'aime apprendre le chinois.)"], strokes: 7, radical: "戈" },
-                { id: 2, character: "你", traditional: "你", pinyin: "nǐ", meaning: "tu, toi", level: "HSK1", examples: ["你好吗？ (Comment vas-tu ?)", "你是老师吗？ (Es-tu professeur ?)"], strokes: 7, radical: "亻" },
-                { id: 3, character: "他", traditional: "他", pinyin: "tā", meaning: "il, lui", level: "HSK1", examples: ["他是我的朋友。 (Il est mon ami.)", "他在北京工作。 (Il travaille à Pékin.)"], strokes: 5, radical: "亻" },
-                { id: 4, character: "她", traditional: "她", pinyin: "tā", meaning: "elle", level: "HSK1", examples: ["她很漂亮。 (Elle est jolie.)", "她会说中文。 (Elle sait parler chinois.)"], strokes: 6, radical: "女" },
-                { id: 5, character: "它", traditional: "它", pinyin: "tā", meaning: "il/elle (pour les objets)", level: "HSK1", examples: ["它是一本书。 (C'est un livre.)", "它很小。 (C'est petit.)"], strokes: 7, radical: "宀" },
-                { id: 6, character: "们", traditional: "們", pinyin: "men", meaning: "pluriel (personnes)", level: "HSK1", examples: ["我们是学生。 (Nous sommes étudiants.)", "他们来自法国。 (Ils viennent de France.)"], strokes: 4, radical: "亻" },
-                { id: 7, character: "是", traditional: "是", pinyin: "shì", meaning: "être", level: "HSK1", examples: ["我是老师。 (Je suis professeur.)", "这是什么？ (Qu'est-ce que c'est ?)"], strokes: 9, radical: "日" },
-                { id: 8, character: "不", traditional: "不", pinyin: "bù", meaning: "non, ne pas", level: "HSK1", examples: ["我不喜欢。 (Je n'aime pas.)", "他不在家。 (Il n'est pas à la maison.)"], strokes: 4, radical: "一" },
-                { id: 9, character: "这", traditional: "這", pinyin: "zhè", meaning: "ceci, ce", level: "HSK1", examples: ["这是我的书。 (C'est mon livre.)", "这个人是谁？ (Qui est cette personne ?)"], strokes: 7, radical: "辶" },
-                { id: 10, character: "那", traditional: "那", pinyin: "nà", meaning: "cela, ce", level: "HSK1", examples: ["那是什么？ (Qu'est-ce que c'est ?)", "那个人是我的朋友。 (Cette personne est mon ami.)"], strokes: 6, radical: "阝" },
-
-                // HSK Niveau 2 (plus avancé)
-                { id: 679, character: "室", traditional: "室", pinyin: "shì", meaning: "room, home, house, chamber", level: "HSK2", examples: ["教室 (salle de classe)", "卧室 (chambre à coucher)"], strokes: 9, radical: "宀" },
-                { id: 31, character: "前", traditional: "前", pinyin: "qián", meaning: "avant, devant", level: "HSK2", examples: ["前面 (devant)", "以前 (avant)"], strokes: 9, radical: "刂" },
-                { id: 32, character: "后", traditional: "後", pinyin: "hòu", meaning: "après, derrière", level: "HSK2", examples: ["后面 (derrière)", "以后 (après)"], strokes: 9, radical: "彐" },
-                { id: 33, character: "里", traditional: "裡", pinyin: "lǐ", meaning: "dans, à l'intérieur", level: "HSK2", examples: ["里面 (à l'intérieur)", "这里 (ici)"], strokes: 7, radical: "里" },
-                { id: 34, character: "外", traditional: "外", pinyin: "wài", meaning: "dehors, extérieur", level: "HSK2", examples: ["外面 (dehors)", "国外 (à l'étranger)"], strokes: 5, radical: "夕" },
-                { id: 35, character: "今", traditional: "今", pinyin: "jīn", meaning: "aujourd'hui, maintenant", level: "HSK2", examples: ["今天 (aujourd'hui)", "今年 (cette année)"], strokes: 4, radical: "人" },
-
-                // HSK Niveau 3 (avancé)
-                { id: 1425, character: "宅", traditional: "宅", pinyin: "zhái", meaning: "residence, dwelling, home; grave", level: "HSK3", examples: ["宅在家里 (rester à la maison)", "住宅 (habitation)"], strokes: 6, radical: "宀" },
-                { id: 51, character: "学", traditional: "學", pinyin: "xué", meaning: "étudier, apprendre", level: "HSK3", examples: ["学习 (étudier)", "大学 (université)"], strokes: 8, radical: "子" },
-                { id: 52, character: "习", traditional: "習", pinyin: "xí", meaning: "pratiquer", level: "HSK3", examples: ["学习 (étudier)", "习惯 (habitude)"], strokes: 3, radical: "纟" },
-                { id: 53, character: "做", traditional: "做", pinyin: "zuò", meaning: "faire", level: "HSK3", examples: ["做饭 (cuisiner)", "做作业 (faire ses devoirs)"], strokes: 11, radical: "亻" }
-            ],
-
-            // Obtenir des caractères par niveau HSK
-            getCharactersByLevel(level, offset = 0, limit = 100) {
-                const filteredChars = this.database.filter(char => level === "ALL" || char.level === level);
-                return filteredChars.slice(offset, offset + limit);
             },
 
-            // Rechercher un caractère par requête
-            searchCharacter(query) {
-                console.log("searchCharacter" + query);
-                if (!query) return [];
+            // Nouvelle variable pour stocker les exemples de phrases
+            sentencesData: null,
 
-                // Recherche plus sophistiquée
-                return this.database.filter(char =>
-                    char.char.includes(query) ||
-                    char.trad_char.includes(query) ||
-                    char.pinyin.toLowerCase().includes(query.toLowerCase()) ||
-                    char.pinyin_normalised.toLowerCase().includes(query.toLowerCase()) ||
-                    char.meaningfr.toLowerCase().includes(query.toLowerCase())||
-                    char.meaningen.toLowerCase().includes(query.toLowerCase())
-                    
-                );
-            },
-
-            // Obtenir des radicaux
-            getRadicals() {
-                return [
-                    { radical: "氵", meaning: "eau", examples: ["海", "河", "湖", "洗"] },
-                    { radical: "亻", meaning: "personne", examples: ["你", "他", "们", "休"] },
-                    { radical: "讠", meaning: "parole", examples: ["说", "话", "语", "读"] },
-                    { radical: "宀", meaning: "toit", examples: ["家", "室", "宅", "宁"] },
-                    { radical: "扌", meaning: "main", examples: ["打", "抓", "推", "拉"] },
-                    { radical: "口", meaning: "bouche", examples: ["吃", "喝", "叫", "吗"] },
-                    { radical: "木", meaning: "bois", examples: ["树", "林", "森", "板"] },
-                    { radical: "女", meaning: "femme", examples: ["妈", "姐", "妹", "她"] },
-                    { radical: "心", meaning: "cœur", examples: ["想", "忆", "忘", "恋"] },
-                    { radical: "火", meaning: "feu", examples: ["炒", "烧", "热", "灯"] }
-                ];
-            },
-
-            // Obtenir les traits de base
-            getBasicStrokes() {
-                return [
-                    { name: "横", pinyin: "héng", description: "trait horizontal", example: "一" },
-                    { name: "竖", pinyin: "shù", description: "trait vertical", example: "丨" },
-                    { name: "撇", pinyin: "piě", description: "trait descendant vers la gauche", example: "丿" },
-                    { name: "捺", pinyin: "nà", description: "trait descendant vers la droite", example: "乀" },
-                    { name: "点", pinyin: "diǎn", description: "point", example: "丶" },
-                    { name: "提", pinyin: "tí", description: "trait ascendant", example: "㇀" },
-                    { name: "折", pinyin: "zhé", description: "trait brisé", example: "乛" }
-                ];
-            },
-
-            // Générer un quiz
-            generateQuiz(level, count = 5) {
-                const characters = this.getCharactersByLevel(level, 0, 30000);
-                const questions = [];
-                const usedIds = new Set();
-
-                console.log(characters);
-
-                while (questions.length < count && questions.length < characters.length) {
-                    // Choisir un caractère aléatoire
-                    let randomIndex;
-                    let character;
-
-                    do {
-                        randomIndex = Math.floor(Math.random() * characters.length);
-                        character = characters[randomIndex];
-                    } while (usedIds.has(character.id));
-
-                    usedIds.add(character.id);
-
-                    // Créer des options pour le quiz
-                    const options = [
-                        { id: 1, text: character.meaningfr, correct: true }
-                    ];
-
-                    // Ajouter des options incorrectes
-                    let optionCount = 2;
-                    while (options.length < 4 && optionCount <= characters.length) {
-                        const wrongIndex = (randomIndex + optionCount) % characters.length;
-                        const wrongOption = {
-                            id: optionCount,
-                            text: characters[wrongIndex].meaningfr,
-                            correct: false
-                        };
-
-                        // S'assurer qu'on n'ajoute pas la même signification
-                        if (!options.some(o => o.text === wrongOption.text)) {
-                            options.push(wrongOption);
-                        }
-
-                        optionCount++;
-                    }
-
-                    // Mélanger les options
-                    const shuffledOptions = [...options].sort(() => Math.random() - 0.5);
-
-                    console.log(character);
-                    
-                    questions.push({
-                        id: questions.length + 1,
-                        character: character.char,
-                        pinyin: character.pinyin,
-                        trad_char: character.trad_char,
-                        meaningfr: character.meaningfr,
-                        options: shuffledOptions
-                    });
+            // Méthode pour charger le fichier TSV d'exemples
+            async loadSentencesData() {
+                if (this.sentencesData !== null) {
+                    return this.sentencesData; // Renvoyer les données déjà chargées
                 }
 
-                return questions;
-            }
+                try {
+                    console.log("Chargement du fichier de phrases...");
+                    const response = await fetch('./sentences-cn-fr.tsv');
+
+                    if (!response.ok) {
+                        throw new Error(`Impossible de charger le fichier TSV (code ${response.status})`);
+                    }
+
+                    const tsvText = await response.text();
+                    const sentences = [];
+
+                    // Analyser le TSV (format: ID, Phrase chinoise, Nombre, Traduction française)
+                    const lines = tsvText.split('\n');
+                    for (const line of lines) {
+                        if (!line.trim()) continue;
+
+                        // Utiliser un split avec tabulation comme séparateur
+                        const parts = line.split('\t');
+                        if (parts.length >= 4) {
+                            sentences.push({
+                                id: parts[0].trim(),
+                                chinese: parts[1].trim(),
+                                frequency: parseInt(parts[2].trim(), 10) || 0,
+                                french: parts[3].trim()
+                            });
+                        }
+                    }
+
+                    console.log(`${sentences.length} phrases chargées depuis le fichier TSV`);
+                    this.sentencesData = sentences;
+                    return sentences;
+                } catch (error) {
+                    console.error("Erreur lors du chargement des exemples de phrases:", error);
+                    this.sentencesData = []; // Définir un tableau vide en cas d'erreur
+                    return [];
+                }
+            },
+
+            // Méthode pour trouver des exemples contenant un caractère spécifique
+            async findExamplesWithCharacter(character, maxExamples = 3) {
+                try {
+                    // S'assurer que les données des phrases sont chargées
+                    const sentences = await this.loadSentencesData();
+
+                    // Filtrer les phrases qui contiennent le caractère
+                    const matchingSentences = sentences.filter(sentence =>
+                        sentence.chinese.includes(character)
+                    );
+
+                    // Trier par fréquence (du plus fréquent au moins fréquent)
+                    matchingSentences.sort((a, b) => b.frequency - a.frequency);
+
+                    // Prendre les X premiers exemples
+                    return matchingSentences.slice(0, maxExamples);
+                } catch (error) {
+                    console.error(`Erreur lors de la recherche d'exemples pour ${character}:`, error);
+                    return [];
+                }
+            },
         };
 
         // ===================================
-        // MODÈLE UTILISATEUR (avec localStorage)
+        // MODÈLE UTILISATEUR (avec localStorage) CORRIGÉ
         // ===================================
 
         const UserProfile = {
@@ -1439,7 +1467,7 @@
                 xpToNextLevel: 100,
                 streak: 0,
                 lastLogin: null,
-                learnedCharacters: [],
+                learnedCharacters: [], // Stocke les IDs des caractères appris
                 quizResults: [],
                 badges: [
                     { id: 1, name: "Premier pas", description: "Commencer votre apprentissage", unlocked: false, icon: "🏅" },
@@ -1462,14 +1490,25 @@
             getState() {
                 const storedState = localStorage.getItem('userProfile');
                 if (storedState) {
-                    return JSON.parse(storedState);
+                    try {
+                        return JSON.parse(storedState);
+                    } catch (e) {
+                        console.error("Erreur lors de la lecture du profil utilisateur:", e);
+                        return this.defaultState;
+                    }
                 }
                 return this.defaultState;
             },
 
             // Sauvegarder l'état de l'utilisateur dans localStorage
             saveState(state) {
-                localStorage.setItem('userProfile', JSON.stringify(state));
+                try {
+                    localStorage.setItem('userProfile', JSON.stringify(state));
+                    return true;
+                } catch (e) {
+                    console.error("Erreur lors de la sauvegarde du profil utilisateur:", e);
+                    return false;
+                }
             },
 
             // Mettre à jour le profil utilisateur
@@ -1488,10 +1527,11 @@
                 // Vérifier si c'est un nouveau jour
                 if (currentState.lastLogin !== today) {
                     // Réinitialiser les défis quotidiens
-                    currentState.dailyChallenges.forEach(challenge => {
-                        challenge.progress = 0;
-                        challenge.completed = false;
-                    });
+                    currentState.dailyChallenges = currentState.dailyChallenges.map(challenge => ({
+                        ...challenge,
+                        progress: 0,
+                        completed: false
+                    }));
 
                     // Mettre à jour la streak
                     if (currentState.lastLogin) {
@@ -1524,27 +1564,31 @@
                 return currentState;
             },
 
-            // Ajouter de l'XP
+            // CORRECTION: Fonction addXP améliorée pour gérer les niveaux correctement
             addXP(amount) {
-                return this.update(state => {
-                    state.xp += amount;
+                const state = this.getState();
+                state.xp += amount;
 
-                    // Vérifier si niveau supérieur
-                    if (state.xp >= state.xpToNextLevel) {
-                        state.xp -= state.xpToNextLevel;
-                        state.level += 1;
-                        state.xpToNextLevel = Math.floor(state.xpToNextLevel * 1.2);
+                // Vérifier si niveau supérieur avec une boucle while pour gérer plusieurs niveaux d'un coup
+                while (state.xp >= state.xpToNextLevel) {
+                    state.xp -= state.xpToNextLevel;
+                    state.level += 1;
+                    state.xpToNextLevel = Math.floor(state.xpToNextLevel * 1.2);
 
-                        // Afficher une notification de niveau
-                        UI.showAchievement("Niveau supérieur !", `Vous avez atteint le niveau ${state.level}`, "🌟");
-                        UI.triggerConfetti();
-                    }
+                    // Afficher une notification de niveau
+                    UI.showAchievement("Niveau supérieur !", `Vous avez atteint le niveau ${state.level}`, "🌟");
+                    UI.triggerConfetti();
+                }
 
-                    return state;
-                });
+                this.saveState(state);
+
+                // IMPORTANT: Mettre à jour immédiatement l'interface utilisateur
+                UI.updateUserProfile();
+
+                return state;
             },
 
-            // Marquer un caractère comme appris
+            // Marquer un caractère comme appris 
             learnCharacter(characterId) {
                 return this.update(state => {
                     if (!state.learnedCharacters.includes(characterId)) {
@@ -1557,8 +1601,11 @@
 
                             if (learnChallenge.progress >= learnChallenge.total && !learnChallenge.completed) {
                                 learnChallenge.completed = true;
-                                this.addXP(learnChallenge.reward);
-                                UI.showAchievement("Défi complété !", `+${learnChallenge.reward} XP`, "🎯");
+                                // MODIFIER: Ne pas ajouter l'XP ici, appeler addXP séparément
+                                setTimeout(() => {
+                                    this.addXP(learnChallenge.reward);
+                                    UI.showAchievement("Défi complété !", `+${learnChallenge.reward} XP`, "🎯");
+                                }, 100);
                             }
                         }
 
@@ -1567,7 +1614,8 @@
                             this.unlockBadge(3, state);
                         }
 
-                        this.addXP(5);
+                        // MODIFIER: Ne pas ajouter l'XP ici, appeler addXP séparément
+                        setTimeout(() => this.addXP(5), 50);
                     }
 
                     return state;
@@ -1591,8 +1639,11 @@
 
                         if (quizChallenge.progress >= quizChallenge.total && !quizChallenge.completed) {
                             quizChallenge.completed = true;
-                            this.addXP(quizChallenge.reward);
-                            UI.showAchievement("Défi complété !", `+${quizChallenge.reward} XP`, "🎯");
+                            // MODIFIER: Appeler addXP séparément
+                            setTimeout(() => {
+                                this.addXP(quizChallenge.reward);
+                                UI.showAchievement("Défi complété !", `+${quizChallenge.reward} XP`, "🎯");
+                            }, 100);
                         }
                     }
 
@@ -1601,7 +1652,9 @@
                         this.unlockBadge(4, state);
                     }
 
-                    this.addXP(result.score * 5);
+                    // MODIFIER: Appeler addXP séparément après avoir sauvegardé l'état
+                    setTimeout(() => this.addXP(result.score * 5), 50);
+
                     return state;
                 });
             },
@@ -1619,8 +1672,11 @@
 
                             if (writingChallenge.progress >= writingChallenge.total && !writingChallenge.completed) {
                                 writingChallenge.completed = true;
-                                this.addXP(writingChallenge.reward);
-                                UI.showAchievement("Défi complété !", `+${writingChallenge.reward} XP`, "🎯");
+                                // MODIFIER: Appeler addXP séparément
+                                setTimeout(() => {
+                                    this.addXP(writingChallenge.reward);
+                                    UI.showAchievement("Défi complété !", `+${writingChallenge.reward} XP`, "🎯");
+                                }, 100);
                             }
                         }
 
@@ -1629,7 +1685,8 @@
                             this.unlockBadge(5, state);
                         }
 
-                        this.addXP(5);
+                        // MODIFIER: Appeler addXP séparément
+                        setTimeout(() => this.addXP(5), 50);
                     }
 
                     return state;
@@ -1659,8 +1716,8 @@
                     // Afficher une notification
                     UI.showAchievement("Badge débloqué !", `${badge.name} - ${badge.description}`, badge.icon);
 
-                    // Ajouter de l'XP pour le badge
-                    this.addXP(30);
+                    // MODIFIER: Ajouter l'XP séparément après le retour de la fonction
+                    setTimeout(() => this.addXP(30), 50);
                 }
 
                 return state;
@@ -1677,8 +1734,335 @@
                     }
                     return state;
                 });
+            },
+
+            // Réinitialiser le profil utilisateur (pour les tests)
+            resetProfile() {
+                localStorage.removeItem('userProfile');
+                return this.defaultState;
             }
         };
+
+        // ===================================
+        // POLYFILL POUR HANZIWRITER SI NÉCESSAIRE
+        // ===================================
+
+        // Vérifier si HanziWriter existe déjà
+        if (typeof HanziWriter === 'undefined') {
+            console.log("HanziWriter non détecté, chargement du polyfill...");
+
+            window.HanziWriter = {
+                create(elementId, character, options) {
+                    console.log(`Simulation d'animation pour le caractère ${character} dans #${elementId}`);
+
+                    // Obtenir l'élément cible
+                    const element = document.getElementById(elementId);
+                    if (!element) {
+                        console.error(`Élément #${elementId} non trouvé`);
+                        return null;
+                    }
+
+                    // Créer une version simplifiée de l'animation du caractère
+                    element.innerHTML = `
+                        <div style="position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                            <div style="font-size: 8rem; line-height: 1;">${character}</div>
+                            <div style="font-size: 1rem; margin-top: 1rem;">Animation simulée</div>
+                        </div>
+                    `;
+
+                    // Retourner un objet avec des méthodes simulées
+                    return {
+                        animateCharacter() {
+                            console.log(`Animation du caractère ${character}`);
+
+                            // Simuler une animation en faisant clignoter le caractère
+                            const charElement = element.querySelector('div > div:first-child');
+
+                            // Ajouter un style pour le clignotement
+                            const style = document.createElement('style');
+                            style.textContent = `
+                                @keyframes stroke-animation {
+                                    0% { opacity: 0.3; }
+                                    50% { opacity: 1; }
+                                    100% { opacity: 0.3; }
+                                }
+                                .animating-character {
+                                    animation: stroke-animation 2s infinite;
+                                }
+                            `;
+                            document.head.appendChild(style);
+
+                            // Ajouter la classe d'animation
+                            charElement.classList.add('animating-character');
+
+                            return this;
+                        },
+
+                        // Autres méthodes simulées
+                        setCharacter(char) {
+                            element.querySelector('div > div:first-child').textContent = char;
+                            return this;
+                        },
+
+                        quiz() {
+                            console.log("Quiz d'écriture simulé");
+                            return this;
+                        },
+
+                        hideCharacter() {
+                            element.querySelector('div > div:first-child').style.visibility = 'hidden';
+                            return this;
+                        },
+
+                        showCharacter() {
+                            element.querySelector('div > div:first-child').style.visibility = 'visible';
+                            return this;
+                        }
+                    };
+                }
+            };
+        }
+
+        // ===================================
+        // BOUTON DE GÉNÉRATION DU FICHIER JSON
+        // ===================================
+
+        // Fonction pour créer un bouton de génération du fichier JSON
+        function addGenerateJsonButton() {
+            // Créer le bouton
+            const generateButton = document.createElement('button');
+            generateButton.textContent = "Générer le fichier JSON";
+            generateButton.className = "btn btn-secondary";
+            generateButton.style.position = "fixed";
+            generateButton.style.bottom = "50px";
+            generateButton.style.left = "10px";
+            generateButton.style.zIndex = "1000";
+
+            generateButton.addEventListener('click', () => {
+                // Créer des données d'exemple pour le JSON
+                const jsonData = [
+                    // HSK Niveau 1
+                    { id: 1, char: "我", trad_char: "我", pinyin: "wǒ", pinyin_normalised: "wo3", meaningfr: "je, moi", meaningen: "I, me", freq: 1, stroke_count: 7, radical: "戈" },
+                    { id: 2, char: "你", trad_char: "你", pinyin: "nǐ", pinyin_normalised: "ni3", meaningfr: "tu, toi", meaningen: "you", freq: 1, stroke_count: 7, radical: "亻" },
+                    { id: 3, char: "他", trad_char: "他", pinyin: "tā", pinyin_normalised: "ta1", meaningfr: "il, lui", meaningen: "he, him", freq: 1, stroke_count: 5, radical: "亻" },
+                    { id: 4, char: "她", trad_char: "她", pinyin: "tā", pinyin_normalised: "ta1", meaningfr: "elle", meaningen: "she, her", freq: 1, stroke_count: 6, radical: "女" },
+                    { id: 5, char: "它", trad_char: "它", pinyin: "tā", pinyin_normalised: "ta1", meaningfr: "il/elle (objets)", meaningen: "it", freq: 1, stroke_count: 7, radical: "宀" },
+                    { id: 6, char: "们", trad_char: "們", pinyin: "men", pinyin_normalised: "men", meaningfr: "pluriel (personnes)", meaningen: "plural suffix", freq: 1, stroke_count: 4, radical: "亻" },
+                    { id: 7, char: "是", trad_char: "是", pinyin: "shì", pinyin_normalised: "shi4", meaningfr: "être", meaningen: "to be", freq: 1, stroke_count: 9, radical: "日" },
+                    { id: 8, char: "不", trad_char: "不", pinyin: "bù", pinyin_normalised: "bu4", meaningfr: "non, ne pas", meaningen: "no, not", freq: 1, stroke_count: 4, radical: "一" },
+                    { id: 9, char: "这", trad_char: "這", pinyin: "zhè", pinyin_normalised: "zhe4", meaningfr: "ceci, ce", meaningen: "this", freq: 1, stroke_count: 7, radical: "辶" },
+                    { id: 10, char: "那", trad_char: "那", pinyin: "nà", pinyin_normalised: "na4", meaningfr: "cela, ce", meaningen: "that", freq: 1, stroke_count: 6, radical: "阝" },
+                    { id: 525, char: "家", trad_char: "家", pinyin: "jiā", pinyin_normalised: "jia1", meaningfr: "maison, foyer, famille", meaningen: "home, family", freq: 1, stroke_count: 10, radical: "宀" },
+
+                    // HSK Niveau 2
+                    { id: 31, char: "前", trad_char: "前", pinyin: "qián", pinyin_normalised: "qian2", meaningfr: "avant, devant", meaningen: "front, before", freq: 3, stroke_count: 9, radical: "刂" },
+                    { id: 32, char: "后", trad_char: "後", pinyin: "hòu", pinyin_normalised: "hou4", meaningfr: "après, derrière", meaningen: "after, behind", freq: 3, stroke_count: 9, radical: "彐" },
+                    { id: 33, char: "里", trad_char: "裡", pinyin: "lǐ", pinyin_normalised: "li3", meaningfr: "dans, à l'intérieur", meaningen: "inside, within", freq: 3, stroke_count: 7, radical: "里" },
+                    { id: 34, char: "外", trad_char: "外", pinyin: "wài", pinyin_normalised: "wai4", meaningfr: "dehors, extérieur", meaningen: "outside, external", freq: 3, stroke_count: 5, radical: "夕" },
+                    { id: 35, char: "今", trad_char: "今", pinyin: "jīn", pinyin_normalised: "jin1", meaningfr: "aujourd'hui, maintenant", meaningen: "today, now", freq: 3, stroke_count: 4, radical: "人" },
+                    { id: 679, char: "室", trad_char: "室", pinyin: "shì", pinyin_normalised: "shi4", meaningfr: "pièce, chambre", meaningen: "room, chamber", freq: 3, stroke_count: 9, radical: "宀" },
+
+                    // HSK Niveau 3
+                    { id: 51, char: "学", trad_char: "學", pinyin: "xué", pinyin_normalised: "xue2", meaningfr: "étudier, apprendre", meaningen: "to study, to learn", freq: 5, stroke_count: 8, radical: "子" },
+                    { id: 52, char: "习", trad_char: "習", pinyin: "xí", pinyin_normalised: "xi2", meaningfr: "pratiquer", meaningen: "to practice", freq: 5, stroke_count: 3, radical: "纟" },
+                    { id: 53, char: "做", trad_char: "做", pinyin: "zuò", pinyin_normalised: "zuo4", meaningfr: "faire", meaningen: "to do, to make", freq: 5, stroke_count: 11, radical: "亻" },
+                    { id: 1425, char: "宅", trad_char: "宅", pinyin: "zhái", pinyin_normalised: "zhai2", meaningfr: "résidence, habitation", meaningen: "residence, dwelling", freq: 5, stroke_count: 6, radical: "宀" }
+                ];
+
+                // Ajouter plus de caractères (20 par niveau)
+                for (let i = 1; i <= 20; i++) {
+                    // HSK 1
+                    jsonData.push({
+                        id: 1000 + i,
+                        char: String.fromCharCode(19968 + i),
+                        trad_char: String.fromCharCode(19968 + i),
+                        pinyin: ["yī", "èr", "sān", "sì", "wǔ"][i % 5],
+                        pinyin_normalised: ["yi1", "er2", "san3", "si4", "wu3"][i % 5],
+                        meaningfr: `mot HSK1 ${i}`,
+                        meaningen: `HSK1 word ${i}`,
+                        freq: 1,
+                        stroke_count: 4 + (i % 6),
+                        radical: ["一", "二", "三", "口", "木", "水"][i % 6]
+                    });
+
+                    // HSK 2
+                    jsonData.push({
+                        id: 2000 + i,
+                        char: String.fromCharCode(20000 + i),
+                        trad_char: String.fromCharCode(20000 + i),
+                        pinyin: ["zhōng", "huā", "rén", "mín", "gòng"][i % 5],
+                        pinyin_normalised: ["zhong1", "hua1", "ren2", "min2", "gong4"][i % 5],
+                        meaningfr: `mot HSK2 ${i}`,
+                        meaningen: `HSK2 word ${i}`,
+                        freq: 3,
+                        stroke_count: 6 + (i % 6),
+                        radical: ["土", "山", "火", "水", "木", "金"][i % 6]
+                    });
+
+                    // HSK 3
+                    jsonData.push({
+                        id: 3000 + i,
+                        char: String.fromCharCode(20100 + i),
+                        trad_char: String.fromCharCode(20100 + i),
+                        pinyin: ["gōng", "hé", "guó", "dài", "biǎo"][i % 5],
+                        pinyin_normalised: ["gong1", "he2", "guo2", "dai4", "biao3"][i % 5],
+                        meaningfr: `mot HSK3 ${i}`,
+                        meaningen: `HSK3 word ${i}`,
+                        freq: 5,
+                        stroke_count: 8 + (i % 6),
+                        radical: ["木", "金", "水", "火", "土", "心"][i % 6]
+                    });
+                }
+
+                // Convertir en JSON
+                const jsonString = JSON.stringify(jsonData, null, 2);
+
+                // Créer un blob et un lien de téléchargement
+                const blob = new Blob([jsonString], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+
+                const downloadLink = document.createElement('a');
+                downloadLink.href = url;
+                downloadLink.download = 'rapidmandarin.hanzis.json';
+                downloadLink.click();
+
+                URL.revokeObjectURL(url);
+
+                alert("Fichier JSON généré! Placez-le à la racine de votre site web.");
+            });
+
+            document.body.appendChild(generateButton);
+        }
+
+        function refreshUserInterface() {
+            const user = UserProfile.getState();
+            document.getElementById('user-level').textContent = user.level;
+            document.getElementById('user-xp-text').textContent = `${user.xp}/${user.xpToNextLevel} XP`;
+            const xpPercentage = (user.xp / user.xpToNextLevel) * 100;
+            document.getElementById('user-xp-bar').style.width = `${xpPercentage}%`;
+            document.getElementById('user-streak').textContent = user.streak;
+
+            // Mettre à jour les statistiques également
+            UI.updateStats();
+        }
+
+        // function addRefreshButton() {
+        //     const refreshBtn = document.createElement('button');
+        //     refreshBtn.textContent = "Rafraîchir l'interface";
+        //     refreshBtn.className = "btn btn-secondary";
+        //     refreshBtn.style.position = "fixed";
+        //     refreshBtn.style.top = "10px";
+        //     refreshBtn.style.right = "10px";
+        //     refreshBtn.style.zIndex = "1000";
+
+        //     refreshBtn.addEventListener('click', refreshUserInterface);
+        //     document.body.appendChild(refreshBtn);
+        // }
+
+        // ===================================
+        // UTILITAIRE DE RÉINITIALISATION DU PROFIL
+        // ===================================
+
+        // Ajouter un bouton de réinitialisation pour les tests
+        function addResetProfileButton() {
+            const resetButton = document.createElement('button');
+            resetButton.textContent = "Réinitialiser le profil";
+            resetButton.className = "btn btn-outline";
+            resetButton.style.position = "fixed";
+            resetButton.style.bottom = "10px";
+            resetButton.style.left = "10px";
+            resetButton.style.zIndex = "1000";
+
+            resetButton.addEventListener('click', () => {
+                if (confirm("Voulez-vous vraiment réinitialiser votre profil? Tous vos progrès seront perdus.")) {
+                    UserProfile.resetProfile();
+                    UI.updateUserProfile();
+                    UI.updateStats();
+                    alert("Profil réinitialisé avec succès!");
+                    location.reload();
+                }
+            });
+
+            document.body.appendChild(resetButton);
+        }
+
+        // ===================================
+        // INITIALISATION MANUELLE
+        // ===================================
+
+        // Modifier la fonction d'initialisation pour précharger les données
+        function initializeRapidMandarin() {
+            console.log("Initialisation de RapidMandarin avec JSON externe...");
+
+            // Précharger les phrases d'exemple
+            ChineseAPI.loadSentencesData().then(sentences => {
+                console.log(`${sentences.length} phrases d'exemple préchargées`);
+            });
+
+            // S'assurer que l'interface utilisateur est initialisée
+            UI.init();
+
+            // Ajouter les boutons utilitaires
+            addGenerateJsonButton();
+            addResetProfileButton();
+
+            // Afficher un message de bienvenue
+            setTimeout(() => {
+                const notification = document.createElement('div');
+                notification.style.position = 'fixed';
+                notification.style.bottom = '20px';
+                notification.style.right = '20px';
+                notification.style.padding = '15px';
+                notification.style.backgroundColor = '#457b9d';
+                notification.style.color = 'white';
+                notification.style.borderRadius = '8px';
+                notification.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.2)';
+                notification.style.zIndex = '1000';
+                notification.style.maxWidth = '300px';
+                notification.style.animation = 'slideIn 0.5s ease';
+
+                notification.innerHTML = `
+            <h4 style="margin: 0 0 10px 0;">RapidMandarin initialisé</h4>
+            <p style="margin: 0;">Exemples réels chargés depuis sentences-cn-fr.tsv</p>
+            <button style="background: white; color: #457b9d; border: none; margin-top: 10px; padding: 5px 10px; border-radius: 4px; cursor: pointer;">OK</button>
+        `;
+
+                // Ajouter au document
+                document.body.appendChild(notification);
+
+                // Gérer le bouton de fermeture
+                const closeButton = notification.querySelector('button');
+                closeButton.addEventListener('click', () => {
+                    notification.style.animation = 'slideOut 0.5s ease forwards';
+
+                    // Ajouter le style d'animation pour la sortie
+                    const outStyle = document.createElement('style');
+                    outStyle.textContent = `
+                @keyframes slideOut {
+                    from { transform: translateX(0); }
+                    to { transform: translateX(120%); }
+                }
+            `;
+                    document.head.appendChild(outStyle);
+
+                    setTimeout(() => notification.remove(), 500);
+                });
+
+                // Auto-fermeture après 5 secondes
+                setTimeout(() => {
+                    if (document.body.contains(notification)) {
+                        closeButton.click();
+                    }
+                }, 5000);
+            }, 1000);
+        }
+
+        // Remplacer la fonction testApiConnection pour utiliser notre initialisation personnalisée
+        function testApiConnection() {
+            // Initialiser directement l'application sans test d'API
+            initializeRapidMandarin();
+            return true;
+        }
 
         // ===================================
         // CONTRÔLEUR D'INTERFACE UTILISATEUR
@@ -1771,11 +2155,20 @@
 
             // Mettre à jour l'affichage du profil utilisateur
             updateUserProfile() {
-                const user = UserProfile.initialize();
+                const user = UserProfile.getState(); // Récupérer l'état actuel, pas initialiser
+
+                // Mise à jour des éléments d'interface
                 document.getElementById('user-level').textContent = user.level;
                 document.getElementById('user-xp-text').textContent = `${user.xp}/${user.xpToNextLevel} XP`;
-                document.getElementById('user-xp-bar').style.width = `${(user.xp / user.xpToNextLevel) * 100}%`;
+
+                // Calculer correctement le pourcentage pour la barre de progression
+                const xpPercentage = (user.xp / user.xpToNextLevel) * 100;
+                document.getElementById('user-xp-bar').style.width = `${xpPercentage}%`;
+
                 document.getElementById('user-streak').textContent = user.streak;
+
+                // Mettre à jour également les statistiques
+                this.updateStats();
             },
 
             // Mettre à jour les statistiques
@@ -2026,7 +2419,6 @@
                     }
                 };
 
-                // Afficher les détails d'un caractère
                 const showCharacterDetail = async (character) => {
                     // Masquer le détail pendant le chargement sur mobile
                     if (window.innerWidth < 768) {
@@ -2036,60 +2428,107 @@
                     // Afficher un état de chargement
                     characterDetail.style.display = 'block';
                     characterDetail.innerHTML = `
-            <div class="loading-container">
-                <div class="loading-spinner"></div>
-                <p>Chargement des détails...</p>
-            </div>
+        <div class="loading-container">
+            <div class="loading-spinner"></div>
+            <p>Chargement des détails...</p>
+        </div>
+    `;
+
+                    // S'assurer que le style CSS pour les exemples existe
+                    if (!document.getElementById('examples-style')) {
+                        const style = document.createElement('style');
+                        style.id = 'examples-style';
+                        style.textContent = `
+            .real-example {
+                padding: 8px;
+                margin-bottom: 8px;
+                background-color: #f5f8ff;
+                border-left: 3px solid #457b9d;
+                border-radius: 4px;
+            }
+            
+            .generated-example {
+                padding: 8px;
+                margin-bottom: 8px;
+                border-left: 3px solid #ddd;
+                border-radius: 4px;
+            }
+            
+            .example-sentence {
+                font-size: 1.1rem;
+                margin-bottom: 4px;
+            }
+            
+            .example-translation {
+                font-size: 0.9rem;
+                color: #666;
+            }
         `;
+                        document.head.appendChild(style);
+                    }
 
                     try {
                         // Appel API pour obtenir plus de détails
                         const response = await ChineseAPI.getCharacterDetails(character.char);
                         const details = response.data || character;
-                        // Récupérer les informations spécifiques à HanziBase
+
+                        // Récupérer les informations spécifiques
                         const strokeCount = details.stroke_count || '?';
                         const radical = details.radical || '?';
                         const tradChar = details.trad_char !== details.char ?
                             details.trad_char : 'Identique au simplifié';
 
-                            
                         // Mettre à jour le conteneur de détails avec les nouvelles informations
                         characterDetail.innerHTML = `
-                <div class="character-detail">
-                    <div class="character-info">
-                        <h3>${details.char} ${details.trad_char !== details.char ? `(${details.trad_char})` : ''}</h3>
-                        <p><strong>Pinyin:</strong> ${details.pinyin}</p>
-                        <p><strong>Signification:</strong> ${details.meaningfr}</p>
-                        <p><strong>Forme traditionnelle:</strong> ${tradChar}</p>
-                        <p><strong>Niveau HSK:</strong> ${details.hsk}</p>
-                        <p><strong>Nombre de traits:</strong> ${strokeCount}</p>
-                        <p><strong>Radical:</strong> ${radical}</p>
-                        
-                        ${details.etymology ? `
-                            <div class="character-example">
-                                <h4>Étymologie:</h4>
-                                <p>${details.etymology}</p>
-                            </div>
-                        ` : ''}
-                        
-                        ${details.components && details.components.length > 0 ? `
-                            <div class="character-example">
-                                <h4>Composants:</h4>
-                                <ul>
-                                    ${details.components.map(comp => `<li>${comp.component} - ${comp.meaningfr}</li>`).join('')}
-                                </ul>
-                            </div>
-                        ` : ''}
-                    </div>
-                    <div class="character-writer" id="learn-character-writer">
-                        <!-- Character animator will be inserted here -->
-                    </div>
+            <div class="character-detail">
+                <div class="character-info">
+                    <h3>${details.char} ${details.trad_char !== details.char ? `(${details.trad_char})` : ''}</h3>
+                    <p><strong>Pinyin:</strong> ${details.pinyin}</p>
+                    <p><strong>Signification:</strong> ${details.meaningfr}</p>
+                    <p><strong>Forme traditionnelle:</strong> ${tradChar}</p>
+                    <p><strong>Niveau HSK:</strong> ${details.hsk}</p>
+                    <p><strong>Nombre de traits:</strong> ${strokeCount}</p>
+                    <p><strong>Radical:</strong> ${radical}</p>
+                    
+                    ${details.etymology ? `
+                        <div class="character-example">
+                            <h4>Étymologie:</h4>
+                            <p>${details.etymology}</p>
+                        </div>
+                    ` : ''}
+                    
+                    ${details.examples && details.examples.length > 0 ? `
+                        <div class="character-example">
+                            <h4>Exemples d'utilisation:</h4>
+                            <ul style="list-style-type: none; padding-left: 0;">
+                                ${details.examples.map(ex => `
+                                    <li class="${ex.isReal ? 'real-example' : 'generated-example'}">
+                                        <div class="example-sentence">${ex.sentence}</div>
+                                        ${ex.translation ? `<div class="example-translation">${ex.translation}</div>` : ''}
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        </div>
+                    ` : ''}
+                    
+                    ${details.components && details.components.length > 0 ? `
+                        <div class="character-example">
+                            <h4>Composants:</h4>
+                            <ul>
+                                ${details.components.map(comp => `<li>${comp.component} - ${comp.meaningfr}</li>`).join('')}
+                            </ul>
+                        </div>
+                    ` : ''}
                 </div>
-            `;
+                <div class="character-writer" id="learn-character-writer">
+                    <!-- Character animator will be inserted here -->
+                </div>
+            </div>
+        `;
 
                         // Initialiser l'animation de caractère
                         try {
-                            const writer = HanziWriter.create('learn-character-writer', details.character, {
+                            const writer = HanziWriter.create('learn-character-writer', details.char, {
                                 width: 300,
                                 height: 300,
                                 padding: 5,
@@ -2101,19 +2540,19 @@
                         } catch (err) {
                             console.error('Error initializing character writer:', err);
                             document.getElementById('learn-character-writer').innerHTML = `
-                    <div style="text-align: center;">
-                        <p>Erreur d'animation du caractère.</p>
-                        <div class="character" style="font-size: 8rem;">${details.character}</div>
-                    </div>
-                `;
+                <div style="text-align: center;">
+                    <p>Erreur d'animation du caractère.</p>
+                    <div class="character" style="font-size: 8rem;">${details.char}</div>
+                </div>
+            `;
                         }
                     } catch (error) {
                         console.error("Error fetching character details:", error);
                         characterDetail.innerHTML = `
-                <div class="card">
-                    <p>Erreur lors du chargement des détails. Veuillez réessayer.</p>
-                </div>
-            `;
+            <div class="card">
+                <p>Erreur lors du chargement des détails. Veuillez réessayer.</p>
+            </div>
+        `;
                     }
                 };
 
@@ -2236,14 +2675,11 @@
                     try {
                         // Générer un quiz basé sur les caractères du niveau sélectionné
                         const characters = await ChineseAPI.getCharactersByLevel(level, 0, 30000);
-                        currentQuiz = HanziDB.generateQuiz(level, 5);
-
-                        console.log(currentQuiz)
+                        currentQuiz = [];
 
                         // Si nous avons des données de l'API, utiliser celles-ci pour générer un quiz
                         if (characters.success && characters.data.length > 0) {
                             // Créer un quiz avec les caractères obtenus de l'API
-                            currentQuiz = [];
                             const usedIds = new Set();
 
                             while (currentQuiz.length < 5 && currentQuiz.length < characters.data.length) {
@@ -2628,7 +3064,7 @@
                                     const charInfo = result.details ? {
                                         character: result.character,
                                         ...result.details
-                                    } : HanziDB.searchCharacter(result.character)[0];
+                                    } : {};
 
                                     if (charInfo) {
                                         // Enregistrer le caractère écrit
@@ -2724,14 +3160,14 @@
 
                         characters.forEach(char => {
                             const option = document.createElement('option');
-                            option.value = char.character;
-                            option.textContent = `${char.character} (${char.pinyin} - ${char.strokes || '?'} traits)`;
+                            option.value = char.char;
+                            option.textContent = `${char.char} (${char.pinyin} - ${char.stroke_count || '?'} traits)`;
                             characterSelector.appendChild(option);
                         });
 
                         // Initialiser avec le premier caractère
                         if (characters.length > 0) {
-                            animateStrokeOrder(characters[0].character);
+                            animateStrokeOrder(characters[0].char);
                         }
                     } catch (error) {
                         console.error("Error loading characters for stroke order:", error);
@@ -2770,7 +3206,15 @@
 
                 // Ajouter les traits de base
                 const addBasicStrokes = () => {
-                    const basicStrokes = HanziDB.getBasicStrokes();
+                    const basicStrokes = [
+                        { name: "横", pinyin: "héng", description: "trait horizontal", example: "一" },
+                        { name: "竖", pinyin: "shù", description: "trait vertical", example: "丨" },
+                        { name: "撇", pinyin: "piě", description: "trait descendant vers la gauche", example: "丿" },
+                        { name: "捺", pinyin: "nà", description: "trait descendant vers la droite", example: "乀" },
+                        { name: "点", pinyin: "diǎn", description: "point", example: "丶" },
+                        { name: "提", pinyin: "tí", description: "trait ascendant", example: "㇀" },
+                        { name: "折", pinyin: "zhé", description: "trait brisé", example: "乛" }
+                    ];
 
                     basicStrokesContainer.innerHTML = ''; // Vider d'abord
 
@@ -2827,7 +3271,18 @@
 
                 // Ajouter les radicaux
                 const addRadicals = () => {
-                    const radicals = HanziDB.getRadicals();
+                    const radicals = [
+                        { radical: "氵", meaning: "eau", examples: ["海", "河", "湖", "洗"] },
+                        { radical: "亻", meaning: "personne", examples: ["你", "他", "们", "休"] },
+                        { radical: "讠", meaning: "parole", examples: ["说", "话", "语", "读"] },
+                        { radical: "宀", meaning: "toit", examples: ["家", "室", "宅", "宁"] },
+                        { radical: "扌", meaning: "main", examples: ["打", "抓", "推", "拉"] },
+                        { radical: "口", meaning: "bouche", examples: ["吃", "喝", "叫", "吗"] },
+                        { radical: "木", meaning: "bois", examples: ["树", "林", "森", "板"] },
+                        { radical: "女", meaning: "femme", examples: ["妈", "姐", "妹", "她"] },
+                        { radical: "心", meaning: "cœur", examples: ["想", "忆", "忘", "恋"] },
+                        { radical: "火", meaning: "feu", examples: ["炒", "烧", "热", "灯"] }
+                    ];
 
                     radicalsContainer.innerHTML = ''; // Vider d'abord
 
@@ -2837,7 +3292,7 @@
 
                         radicalItem.innerHTML = `
                             <div style="font-size: 2rem; text-align: center; margin-bottom: 1rem;">${radical.radical}</div>
-                            <p><strong>Signification:</strong> ${radical.meaningfr}</p>
+                            <p><strong>Signification:</strong> ${radical.meaning}</p>
                             <p><strong>Exemples:</strong> ${radical.examples.join(', ')}</p>
                         `;
 
@@ -3104,69 +3559,116 @@
 
                 // Afficher un état de chargement
                 modalBody.innerHTML = `
-                    <div class="loading-container">
-                        <div class="loading-spinner"></div>
-                        <p>Chargement des détails depuis HanziBase...</p>
-                    </div>
-                `;
+        <div class="loading-container">
+            <div class="loading-spinner"></div>
+            <p>Chargement des détails...</p>
+        </div>
+    `;
 
                 // Afficher la modale
                 modal.classList.add('active');
+
+                // Ajouter le style CSS pour les exemples si nécessaire
+                if (!document.getElementById('examples-style')) {
+                    const style = document.createElement('style');
+                    style.id = 'examples-style';
+                    style.textContent = `
+            .real-example {
+                padding: 8px;
+                margin-bottom: 8px;
+                background-color: #f5f8ff;
+                border-left: 3px solid #457b9d;
+                border-radius: 4px;
+            }
+            
+            .generated-example {
+                padding: 8px;
+                margin-bottom: 8px;
+                border-left: 3px solid #ddd;
+                border-radius: 4px;
+            }
+            
+            .example-sentence {
+                font-size: 1.1rem;
+                margin-bottom: 4px;
+            }
+            
+            .example-translation {
+                font-size: 0.9rem;
+                color: #666;
+            }
+        `;
+                    document.head.appendChild(style);
+                }
 
                 // Obtenir des détails supplémentaires et afficher
                 ChineseAPI.getCharacterDetails(character.char).then(response => {
                     const details = response.data || character;
 
-                    // Récupérer les informations spécifiques à HanziBase
+                    // Récupérer les informations spécifiques
                     const strokeCount = details.stroke_count || '?';
                     const radical = details.radical || '?';
                     const freq = details.freq ? `${details.freq} (${details.freq <= 2 ? 'Très fréquent' : (details.freq <= 4 ? 'Commun' : 'Moins commun')})` : '?';
 
                     modalBody.innerHTML = `
-                        <div class="character-detail">
-                            <div class="character-info">
-                                <h3>${details.char} ${details.trad_char !== details.char ? `(${details.trad_char})` : ''}</h3>
-                                <div style="display: flex; justify-content: space-between; flex-wrap: wrap; margin-bottom: 1rem;">
-                                    <div style="flex: 1; min-width: 150px;">
-                                        <p><strong>Pinyin:</strong> ${details.pinyin}</p>
-                                        <p><strong>Signification:</strong> ${details.meaningfr}</p>
-                                        <p><strong>Niveau HSK:</strong> ${details.hsk}</p>
-                                    </div>
-                                    <div style="flex: 1; min-width: 150px;">
-                                        <p><strong>Traits:</strong> ${strokeCount}</p>
-                                        <p><strong>Radical:</strong> ${radical}</p>
-                                        <p><strong>Fréquence:</strong> ${freq}</p>
-                                    </div>
-                                </div>
-                                
-                                ${details.etymology ? `
-                                    <div class="character-example">
-                                        <h4>Étymologie:</h4>
-                                        <p>${details.etymology}</p>
-                                    </div>
-                                ` : ''}
-                                
-                                ${details.components && details.components.length > 0 ? `
-                                    <div class="character-example">
-                                        <h4>Composants:</h4>
-                                        <ul>
-                                            ${details.components.map(comp => `<li>${comp.component} - ${comp.meaningfr}</li>`).join('')}
-                                        </ul>
-                                    </div>
-                                ` : ''}
-                            </div>
-                            <div class="character-writer" id="modal-character-writer">
-                                <!-- Animateur de caractère inséré ici -->
-                            </div>
+            <div class="character-detail">
+                <div class="character-info">
+                    <h3>${details.char} ${details.trad_char !== details.char ? `(${details.trad_char})` : ''}</h3>
+                    <div style="display: flex; justify-content: space-between; flex-wrap: wrap; margin-bottom: 1rem;">
+                        <div style="flex: 1; min-width: 150px;">
+                            <p><strong>Pinyin:</strong> ${details.pinyin}</p>
+                            <p><strong>Signification:</strong> ${details.meaningfr}</p>
+                            <p><strong>Niveau HSK:</strong> ${details.hsk}</p>
                         </div>
-                        <div style="margin-top: 1.5rem; text-align: right;">
-                            <button class="btn" id="learn-in-modal-btn">Marquer comme appris</button>
+                        <div style="flex: 1; min-width: 150px;">
+                            <p><strong>Traits:</strong> ${strokeCount}</p>
+                            <p><strong>Radical:</strong> ${radical}</p>
+                            <p><strong>Fréquence:</strong> ${freq}</p>
                         </div>
-                    `;
+                    </div>
+                    
+                    ${details.etymology ? `
+                        <div class="character-example">
+                            <h4>Étymologie:</h4>
+                            <p>${details.etymology}</p>
+                        </div>
+                    ` : ''}
+                    
+                    ${details.examples && details.examples.length > 0 ? `
+                        <div class="character-example">
+                            <h4>Exemples d'utilisation:</h4>
+                            <ul style="list-style-type: none; padding-left: 0;">
+                                ${details.examples.map(ex => `
+                                    <li class="${ex.isReal ? 'real-example' : 'generated-example'}">
+                                        <div class="example-sentence">${ex.sentence}</div>
+                                        ${ex.translation ? `<div class="example-translation">${ex.translation}</div>` : ''}
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        </div>
+                    ` : ''}
+                    
+                    ${details.components && details.components.length > 0 ? `
+                        <div class="character-example">
+                            <h4>Composants:</h4>
+                            <ul>
+                                ${details.components.map(comp => `<li>${comp.component} - ${comp.meaningfr}</li>`).join('')}
+                            </ul>
+                        </div>
+                    ` : ''}
+                </div>
+                <div class="character-writer" id="modal-character-writer">
+                    <!-- Character animator will be inserted here -->
+                </div>
+            </div>
+            <div style="margin-top: 1.5rem; text-align: right;">
+                <button class="btn" id="learn-in-modal-btn">Marquer comme appris</button>
+            </div>
+        `;
 
                     // Initialiser l'animation du caractère
                     try {
-                        const writer = HanziWriter.create('modal-character-writer', details.character, {
+                        const writer = HanziWriter.create('modal-character-writer', details.char, {
                             width: 200,
                             height: 200,
                             padding: 5,
@@ -3178,8 +3680,11 @@
                     } catch (err) {
                         console.error('Error initializing character writer in modal:', err);
                         document.getElementById('modal-character-writer').innerHTML = `
-                            <div class="character" style="font-size: 4rem; text-align: center;">${details.character}</div>
-                        `;
+                <div style="text-align: center;">
+                    <p>Erreur d'animation du caractère.</p>
+                    <div class="character" style="font-size: 4rem;">${details.char}</div>
+                </div>
+            `;
                     }
 
                     // Ajouter un écouteur d'événement au bouton d'apprentissage
@@ -3202,10 +3707,10 @@
                 }).catch(error => {
                     console.error("Error fetching character details for modal:", error);
                     modalBody.innerHTML = `
-                        <div class="card">
-                            <p>Erreur lors du chargement des détails du caractère. Veuillez réessayer.</p>
-                        </div>
-                    `;
+            <div class="card">
+                <p>Erreur lors du chargement des détails du caractère. Veuillez réessayer.</p>
+            </div>
+        `;
                 });
             },
 
@@ -3296,132 +3801,18 @@
             }
         }
 
-        // Initialiser l'application lorsque le DOM est chargé
+        // Appeler la fonction au chargement de la page
         document.addEventListener('DOMContentLoaded', function () {
-            // Ajouter une notification pour informer l'utilisateur de la nouvelle API
-            function showApiNotification() {
-                const notification = document.createElement('div');
-                notification.style.position = 'fixed';
-                notification.style.bottom = '20px';
-                notification.style.left = '20px';
-                notification.style.padding = '15px';
-                notification.style.backgroundColor = '#457b9d'; // Couleur secondaire de l'application
-                notification.style.color = 'white';
-                notification.style.borderRadius = '8px';
-                notification.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.2)';
-                notification.style.zIndex = '1000';
-                notification.style.maxWidth = '300px';
-                notification.style.animation = 'slideIn 0.5s ease';
+            // Initialiser sans attendre le test d'API
+            initializeRapidMandarin();
+        });
 
-                notification.innerHTML = `
-                    <h4 style="margin: 0 0 10px 0;">Nouvelle API intégrée!</h4>
-                    <p style="margin: 0;">RapidMandarin utilise maintenant HanziBase pour des informations plus complètes sur les caractères chinois.</p>
-                    <button style="background: white; color: #457b9d; border: none; margin-top: 10px; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Fermer</button>
-                `;
-
-                // Ajouter le style d'animation
-                const style = document.createElement('style');
-                style.textContent = `
-                    @keyframes slideIn {
-                        from { transform: translateX(-120%); }
-                        to { transform: translateX(0); }
-                    }
-                `;
-                document.head.appendChild(style);
-
-                // Ajouter au document
-                document.body.appendChild(notification);
-
-                // Gérer le bouton de fermeture
-                const closeButton = notification.querySelector('button');
-                closeButton.addEventListener('click', () => {
-                    notification.style.animation = 'slideOut 0.5s ease forwards';
-
-                    // Ajouter le style d'animation pour la sortie
-                    const outStyle = document.createElement('style');
-                    outStyle.textContent = `
-                        @keyframes slideOut {
-                            from { transform: translateX(0); }
-                            to { transform: translateX(-120%); }
-                        }
-                    `;
-                    document.head.appendChild(outStyle);
-
-                    // Supprimer après animation
-                    setTimeout(() => {
-                        notification.remove();
-                    }, 500);
-                });
-
-                // Auto-fermeture après 10 secondes
-                setTimeout(() => {
-                    if (document.body.contains(notification)) {
-                        closeButton.click();
-                    }
-                }, 10000);
-            }
-
-            // Tester la connexion API et initialiser l'application
-            async function testApiConnection() {
-                try {
-                    // Test simple pour vérifier si l'API est accessible
-                    const response = await fetch('https://api.hanzibase.net/character/filter/id/idc/idc/idc?page=1');
-
-                    if (!response.ok) {
-                        throw new Error(`API responded with status ${response.status}`);
-                    }
-
-                    // Si nous arrivons ici, l'API fonctionne
-                    console.log('HanziBase API connection successful!');
-                    showApiNotification();
-
-                    return true;
-                } catch (error) {
-                    console.error("Error connecting to HanziBase API:", error);
-
-                    // Afficher une notification d'erreur
-                    const notification = document.createElement('div');
-                    notification.style.position = 'fixed';
-                    notification.style.top = '20px';
-                    notification.style.right = '20px';
-                    notification.style.padding = '15px';
-                    notification.style.backgroundColor = '#e63946'; // Couleur d'erreur
-                    notification.style.color = 'white';
-                    notification.style.borderRadius = '8px';
-                    notification.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.2)';
-                    notification.style.zIndex = '1000';
-                    notification.style.maxWidth = '300px';
-
-                    notification.innerHTML = `
-                        <h4 style="margin: 0 0 10px 0;">Erreur de connexion API</h4>
-                        <p style="margin: 0;">Impossible de se connecter à HanziBase. Utilisation des données locales.</p>
-                        <button style="background: white; color: #e63946; border: none; margin-top: 10px; padding: 5px 10px; border-radius: 4px; cursor: pointer;">OK</button>
-                    `;
-
-                    document.body.appendChild(notification);
-
-                    // Gérer le bouton de fermeture
-                    const closeButton = notification.querySelector('button');
-                    closeButton.addEventListener('click', () => {
-                        notification.remove();
-                    });
-
-                    // Auto-fermeture après 5 secondes
-                    setTimeout(() => {
-                        if (document.body.contains(notification)) {
-                            notification.remove();
-                        }
-                    }, 5000);
-
-                    return false;
-                }
-            }
-
-            // Initialiser le test de connexion API et démarrer l'application
-            testApiConnection().then(apiAvailable => {
-                // Initialiser l'interface utilisateur
-                UI.init();
-            });
+        document.addEventListener('DOMContentLoaded', function () {
+            setTimeout(function () {
+                //addRefreshButton();
+                // Faire un rafraîchissement initial
+                refreshUserInterface();
+            }, 1000);
         });
     </script>
 </body>
